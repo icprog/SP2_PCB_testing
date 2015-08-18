@@ -1,0 +1,146 @@
+/******************************************************************************
+ *
+ *   Filename: $UI_task.h
+ *   Created on: $Date: Oct 17, 2013  (4:10:52 PM)
+ *   Revision: $1
+ *   Author: $GadgEon
+ *
+ *   Description: $This file contains header information of processing user feedback
+ *   Copyright (C) 2014 GadgEon System Pvt Ltd - http://www.gadgeon.com
+ *
+ *****************************************************************************/
+
+#ifndef UI_TASK_H_
+#define UI_TASK_H_
+
+typedef enum
+{
+UI_IDLE_CHECK_DISPLAY_OFF,
+UI_IDLE_CHECK_KILL,
+UI_LOW_PWR_SLEEP_MODE,
+UI_WAKING_UP_FROM_SLEEP,
+UI_MAINMENU_LIST,
+UI_SNOW_PROFILE_LIST,
+UI_BLUETOOTH_MAIN,
+UI_SLOP_MEASURMENTS,
+UI_SENSOR_OUTPUT,
+UI_NEW_TEST_LIST,
+UI_NEW_SNOW_PROFILE,
+UI_SNOW_PROFILE_DETAILS,
+UI_SNOW_PROFILE_OPTIONS,
+UI_SNOW_PROFILE_DELETE,
+UI_NEW_SNOW_PROFILE_COLLECTING,
+UI_NEW_SNOW_PROFILE_PROCESSING,
+UI_NEW_SNOW_PROFILE_COMPLETE,
+UI_NEW_SNOW_PROFILE_DISCARD,
+UI_LINK_SLOP_WITH_PROFILE,
+UI_SETTINGS_PASSWORD,
+UI_SETTINGS,
+UI_NEW_SNOW_PROFILE_CALIBRATING,
+UI_USB_MASS_STORAGE,
+UI_CANT_PROCEED_NEED_TO_TURN_OFF,
+UI_REBOOT_CONFIRM,
+UI_ABOUT_DEVICE,
+UI_FAVOURITES_LIST,
+UI_SET_FAVOURITE,
+UI_SAVE_SLOPE,
+UI_GPS_LOCATION,
+UI_VIEW_CHARTS,
+UI_DELETE_PROFILE,
+//UI_DEFAULT_GRAPH_VIEW,
+UI_NEW_MULTIPLE_TEST_LIST,
+UI_SNOW_PROFILE_FILE_LIST,
+UI_MASS_STORAGE_ENABLE,
+UI_SETTINGS_SELECTION,
+UI_CONFIG_SETTINGS,
+UI_DATE_AND_TIME,
+UI_UPDATE_DATE,
+UI_UPDATE_TIME,
+UI_UPDATE_ZONE,
+UI_DISPLAY_ERROR_SCREENS,
+UI_FIRMWARE_UPDATE,
+UI_FIRMWARE_CORRUPT,
+
+UI_CALIBRATION_MENU,
+UI_CALIBRATION_IRDMS,
+UI_CALIBRATION_PRESSURE,
+UI_ACCELEROMETER_CALIBRATION_SCREEN_DOWN,
+UI_ACCELEROMETER_CALIBRATION_SCREEN_UP,
+UI_ACCELEROMETER_CALIBRATION_TIP_POINT_DOWN,
+UI_ACCELEROMETER_CALIBRATION_TIP_POINT_UP,
+UI_ACCELEROMETER_CALIBRATION_SCREEN_FACE_IN,
+UI_ACCELEROMETER_CALIBRATION_SCREEN_FACE_OUT,
+UI_CALIBRATION_ACCELEROMETER,
+UI_CALIBRATION_MAGNETOMETER,
+UI_CALIBRATION_ROS_1,
+UI_CALIBRATION_ROS_2,
+UI_CALIBRATION_GPS,
+UI_CALIBRATION_ERROR_SCREEN,
+UI_COMPASS_CALIBRATION,
+UI_ACCELEROMETER_CALIB_ERROR_SCREEN
+}STATE_OF_SCREEN;
+
+
+#define 	IRDMS 				(0)
+#define 	PRESSURE			(1)
+#define 	ACCELEROMETER		(2)
+#define 	MAGNETOMETER		(3)
+#define 	ROS_1				(4)
+#define 	ROS_2				(5)
+#define 	GPS					(6)
+
+#define 	IRDMS_CALIB 		(0)
+#define 	PRESSURE_CALIB		(1)
+#define 	ACCELEROMETER_CALIB_2 (2)
+#define 	ACCELEROMETER_CALIB	(3)
+#define 	MAGNETOMETER_CALIB	(4)
+#define 	ROS1_CALIB			(5)
+#define 	ROS2_CALIB			(6)
+#define 	GPS_CALIB			(7)
+
+
+#define 	INCOMPLETE		(0)
+#define 	COMPLETED		(1)
+#define 	OUT_OF_RANGE	(2)
+
+#define FOLDER_EQUAL	0
+#define FOLDER_UNEQUAL 	1
+
+#define SYNC_DAILY_FILES 	0
+#define SYNC_WEEKLY_FILES 	1
+#define SYNC_ALL_FILES 		2
+#define COMPASS_CALIBRATION_START_SCREEN			0
+#define COMPASS_CALIBRATION_ROLL_SCREEN				1
+#define COMPASS_CALIBRATION_SPIN_SCREEN				2
+#define COMPASS_CALIBRATION_FLIP_SCREEN				3
+
+
+
+#define ACC_CALIBRATION_ACC_SCREEN_DOWN			0
+#define ACC_CALIBRATION_ACC_SCREEN_UP			1
+#define ACC_CALIBRATION_ACC_TIP_POINT_DOWN		2
+#define ACC_CALIBRATION_ACC_TIP_POINT_UP		3
+#define ACC_CALIBRATION_ACC_SCREEN_FACE_IN		4
+#define ACC_CALIBRATION_ACC_SCREEN_FACE_OUT		5
+#define ACC_CALIBRATION_CALC_ACC_CONSTANTS		6
+
+
+#define OUTPUT_FILE_FORMAT						'X'
+#define OUTPUT_FILE_FORMAT_SMOOTH_DATA			'B'
+extern char test_folder_name[], test_file_name[];
+extern char ble_daily_sync_file_name[20];
+extern uint32_t Total_Test_Ctr;
+extern uint8_t type_of_error;
+extern int_16 Angle_result;
+extern uint_16 Heading_result;
+extern uint_16 mag_temp_heading_buff[300];
+extern int_16 Count_angle;
+extern int_16  Count_heading;
+
+extern STATE_OF_SCREEN State_of_Screen,Next_State;
+extern STATE_OF_SCREEN Prev_State_of_Screen;
+void User_intrface_task(uint_32 initial_data);
+#endif /* UI_TASK_H_ */
+/*-----------------------------------------------------------------------------
+ **************************  END   ***************************************
+ -----------------------------------------------------------------------------*/
