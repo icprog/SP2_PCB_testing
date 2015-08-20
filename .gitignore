@@ -1,0 +1,11 @@
+# Ignore everything
+/*
+
+# But not these files...
+!.gitignore
+!README.md
+
+# And not these subdirectories
+!/source1
+!/PROJECT_BUILDS
+

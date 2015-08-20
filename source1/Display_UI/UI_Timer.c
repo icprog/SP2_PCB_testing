@@ -518,7 +518,7 @@ void BLE_hand_shake_timer_start(uint_32 time)
  * Parameter:   None
  * Return:      None
  -----------------------------------------------------------------------------*/
-Start_sensor_output_screen_timer(uint_32 time)
+void Start_sensor_output_screen_timer(uint_32 time)
 {	
 	Sensor_screan_timeout = 0;
 	Sensor_screan_timer = (time * UI_TIMER_TIME_INTERVELL);

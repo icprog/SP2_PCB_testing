@@ -1857,7 +1857,7 @@ float battery_Voltage_Check(void)
 	//		battery_low_check_count = 0;
 	//		Battery_adc_stucked_and_shows_zero = 0;
 	//	}
-//	return V_Bat;
+	return Data_header.Battery_Voltage;
 }
 
 /*-----------------------------------------------------------------------------* 
@@ -1894,8 +1894,8 @@ void Battery_checkon_powerup(void)
 
 		dispaly_battery_low();
 		Kill_Controller_Init();
-		while(1);
-
+		while(1)
+		{};
 	}
 	else
 	{	
@@ -4350,7 +4350,9 @@ void Low_battery_shutdown(void)
 	State_of_Screen = UI_CANT_PROCEED_NEED_TO_TURN_OFF;
 	De_Init_HardWare_When_Battery_Low();
 	Kill_OFF_Controller();
-	while(1);
+	while(1) 
+	{};
+
 }
 /*-------------- -------------------------------------------------------------
  **************************  END   ***************************************
