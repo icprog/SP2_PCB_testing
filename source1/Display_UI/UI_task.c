@@ -19,7 +19,7 @@ uint_16 img_date_word=0, img_time_word=0;
 uint_16 calib_date_word=0, calib_time_word=0;
 MFS_DATE_TIME_PARAM Image_File_Attr;
 MFS_DATE_TIME_PARAM Calib_File_Attr;
-IMAGE_PARA SP1_IMG,CALIB_IMG;
+IMAGE_PARA SP2_IMG,CALIB_IMG;
 char ble_daily_sync_file_name[20]={"\0"};
 static void update_ui_screen(void);
 static uint_8 temp_ble_status = BLUETOOTH_DEVICE_NOT_CONNECTED;
@@ -72,7 +72,7 @@ void UI_Task(uint_32 )
 	Image_File_Attr.TIME_PTR = &img_time_word;
 	Calib_File_Attr.DATE_PTR = &calib_date_word;
 	Calib_File_Attr.TIME_PTR = &calib_time_word;
-	SP1_IMG.CRC_Status = 0;SP1_IMG.Update_Status=0;
+	SP2_IMG.CRC_Status = 0;SP2_IMG.Update_Status=0;
 	CALIB_IMG.CRC_Status = 0;CALIB_IMG.Update_Status=0;	
 
 	Core_clock_selection = ACQUISITION_MODE;

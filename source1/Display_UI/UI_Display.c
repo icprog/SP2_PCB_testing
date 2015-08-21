@@ -2565,10 +2565,10 @@ static void Create_about_device_Content(void)
 
 	sprintf(serilal_no,"SN: %s",Device_id);
 
-	x_position = (DISPLAY_X_MAX / 2) - 10 - (((strlen("AVATECH SP1")) / 2) * NUM_X_PIXEL_PER_CHAR);
+	x_position = (DISPLAY_X_MAX / 2) - 10 - (((strlen("AVATECH SP2")) / 2) * NUM_X_PIXEL_PER_CHAR);
 
 	y_position = 140;
-	Draw_string_new(x_position, y_position, (uint_8 *) "AVATECH SP1", COLOUR_BLACK, MEDIUM_FONT);
+	Draw_string_new(x_position, y_position, (uint_8 *) "AVATECH SP2", COLOUR_BLACK, MEDIUM_FONT);
 
 	x_position = (DISPLAY_X_MAX / 2) - 10 - (((strlen(serilal_no)) / 2) * NUM_X_PIXEL_PER_CHAR);
 

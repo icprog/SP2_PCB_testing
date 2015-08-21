@@ -103,9 +103,9 @@ uint8_t File_CRC16(char Image_File_Name[12])
 
 uint8_t Find_CRC(void)
 {
-	if(SP1_IMG.Update_Status == YES)
+	if(SP2_IMG.Update_Status == YES)
 	{
-		SP1_IMG.CRC_Status   = File_CRC16("a:image.bin");
+		SP2_IMG.CRC_Status   = File_CRC16("a:image.bin");
 	}
 	if(CALIB_IMG.Update_Status == YES)
 	{
@@ -113,7 +113,7 @@ uint8_t Find_CRC(void)
 	}
 
 	
-	if((SP1_IMG.CRC_Status == YES) || (CALIB_IMG.CRC_Status == YES))
+	if((SP2_IMG.CRC_Status == YES) || (CALIB_IMG.CRC_Status == YES))
 	{
 		return 1;
 	}
@@ -131,10 +131,10 @@ uint8_t Check_Firmware_Update()
 	date.DATE_PTR = &date_word;
 	date.TIME_PTR = &time_word;
 	
-	SP1_IMG.CRC_Status = 0;SP1_IMG.Update_Status=0;
+	SP2_IMG.CRC_Status = 0;SP2_IMG.Update_Status=0;
 	CALIB_IMG.CRC_Status = 0;CALIB_IMG.Update_Status=0;	
 
-	/* Checking for SP1 image.bin*/
+	/* Checking for SP2 image.bin*/
 	fd_ptr = fopen("a:image.bin", "r");
 	if (fd_ptr == NULL)
 	{
@@ -155,13 +155,13 @@ uint8_t Check_Firmware_Update()
 		{
 			printf("No Update available\n");
 			fclose(fd_ptr);
-			SP1_IMG.Update_Status = 0;
+			SP2_IMG.Update_Status = 0;
 		}
 		else
 		{
 			printf("Update available\n");
 			fclose(fd_ptr);
-			SP1_IMG.Update_Status = 1;
+			SP2_IMG.Update_Status = 1;
 		}	
 	}
 
@@ -196,7 +196,7 @@ uint8_t Check_Firmware_Update()
 		}	
 	}
 
-	if((SP1_IMG.Update_Status == 1) || (CALIB_IMG.Update_Status == 1))
+	if((SP2_IMG.Update_Status == 1) || (CALIB_IMG.Update_Status == 1))
 	{
 		return 1;
 	}

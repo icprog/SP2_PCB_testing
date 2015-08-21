@@ -168,7 +168,7 @@ static int _setupAdv(void)
 //	int status = IDEV_SUCCESS;
 //
 //	// let's default adv data to something
-//	UINT8 name[28] = "AVTCH SP1:";
+//	UINT8 name[28] = "AVTCH SP2:";
 //	UINT8 advData[MAX_ADV_SIZE];
 //
 //	memcpy(name + 10,Device_id,14);
@@ -673,7 +673,7 @@ void Disable_BLE(void)
  		sprintf(Device_id,"%02X%02X-%02X%02X-%02X%02X",Device_serial_no[5],Device_serial_no[4],Device_serial_no[3],Device_serial_no[2],Device_serial_no[1],Device_serial_no[0]);
  		
  		/** Max size of Drive name supported by MQX IO_IOCTL_SET_VOLUME is 11, so limiting its size....**/
- 		sprintf(Drive_Name,"SP1-%s",Device_id+7);
+ 		sprintf(Drive_Name,"SP2-%s",Device_id+7);
  		printf("success\n Device_serial_no %s\n",Device_id);
  		
  		/**  Naming SD Card....**/
