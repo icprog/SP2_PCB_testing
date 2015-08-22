@@ -380,7 +380,7 @@ uint8_t Write_All_Calib_Dat()
 		ioctl(flash_file, FLASH_IOCTL_ERASE_SECTOR, NULL);
 		_ICACHE_DISABLE();
 		
-		if (100 != write(flash_file, Calib_Flash_Buf, sizeof(Calib_Flash_Buf))) 
+		if (sizeof(Calib_Flash_Buf) != write(flash_file, Calib_Flash_Buf, sizeof(Calib_Flash_Buf))) 
 		{
 			printf("\nError writing to the file. Error code: %d", _io_ferror(flash_file));
 			err_ctr++;
@@ -539,7 +539,7 @@ uint8_t Read_All_Calib_Dat()
 	ioctl(flash_file, FLASH_IOCTL_ENABLE_SECTOR_CACHE, NULL);
 	printf("\nFlash sector cache enabled.");
 
-	if (100 != read(flash_file, Calib_Flash_Buf, sizeof(Calib_Flash_Buf))) 
+	if (sizeof(Calib_Flash_Buf) != read(flash_file, Calib_Flash_Buf, sizeof(Calib_Flash_Buf))) 
 	{
 		printf("\nERROR! Could not read from flash. Exiting...");
 	}

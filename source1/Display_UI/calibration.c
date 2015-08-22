@@ -8,7 +8,7 @@
 #include "common_headers.h"
 
 extern void Write_IRDMS_Data(void);
-extern void Write_Press_Data(void);
+extern void Write_Pressure_Data(void);
 extern void Write_ROS1_Data(void);
 extern void Write_ROS2_Data(void);
 extern void Write_GPS_Data(uint_32  sec);
@@ -41,11 +41,11 @@ CalibTable IRDMS_Calib_Table[] = {
 CalibTable Pressure_Calib_Table[] = {
 
 		//  condition       min voltage,    max voltage	
-		{ 	"0.0 N",      	0.54,        	0.66,	5.5,	INCOMPLETE }, 
-		{ 	"1.0 N", 		0.0007, 		0.0103,	5.5,	INCOMPLETE }, 
-		{	"3.0 N",    	0.095,   	 	0.105,	5.5,	INCOMPLETE }, 
-		{  	"9.0 N",      	0.3255,  		0.3745,	5.5,	INCOMPLETE }, 
-		{ 	"18.0 N", 		1.08,        	1.32,	5.5,	INCOMPLETE }, 
+		{ 	"0.0 N",      	0.45,        	0.75,	5.5,	INCOMPLETE }, 
+		{ 	"1.0 N", 		0.0,     		0.5,	5.5,	INCOMPLETE }, //NOTE: The bounds for all but the first value are differene
+		{	"3.0 N",    	0.0,   	 	    0.7,	5.5,	INCOMPLETE }, //TODO: these values are very open, narrow bounds when tips are better charaterized.
+		{  	"9.0 N",      	0.0,     		1.5,	5.5,	INCOMPLETE }, 
+		{ 	"18.0 N", 		0.0,        	3.3,	5.5,	INCOMPLETE }, 
 		//TODO:- Change NUM_OF_PRESSURE_CONDITION in calib.h
 };
 
@@ -149,8 +149,8 @@ uint_8 calibrate_IRDMS(void)
 }
 
 /*-----------------------------------------------------------------------------
- *  Function:     calibrate_IRDMS
- *  Brief:        calibrate_IRDMS. 
+ *  Function:     calibrate_Pressure
+ *  Brief:        calibrrates the Pressure Sensor
  *  Parameter:    None
  *  Return:       None
 -----------------------------------------------------------------------------*/
@@ -163,6 +163,7 @@ uint_8 calibrate_Pressure_Sensor(void)
 
 	ui_timer_start(500);
 
+	//take an average of pressure adc values
 	while(Check_UI_Timer_Timeout() != TIME_OUT)
 	{
 		if (read(force_sens, &adc_out,sizeof(adc_out)))
@@ -174,7 +175,7 @@ uint_8 calibrate_Pressure_Sensor(void)
 	Pressure_result  = (Pressure_result /sample_count);
 	Pressure_voltage = (Pressure_result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
 
-	if((Pressure_Calib_Table[0].curr_voltage < 5.5))
+	if((Pressure_Calib_Table[0].curr_voltage < 5.5)) //meaning that the first calibration at 0.0N has been done
 	{
 		if(Pressure_Condition_selection != 0)
 		{
@@ -191,7 +192,7 @@ uint_8 calibrate_Pressure_Sensor(void)
 		Pressure_Calib_Table[Pressure_Condition_selection].curr_voltage = 5.5;
 		return OUT_OF_RANGE;  
 	}
-	else
+	else 
 	{
 		diff_Pressure_voltage = Pressure_voltage;
 	}
@@ -594,7 +595,7 @@ void Write_IRDMS_Data(void)
 	}
 }
 
-void Write_Press_Data(void)
+void Write_Pressure_Data(void)
 {
 	FLOAT_TO_CHAR conv;
 	MQX_FILE_PTR Ser_fd_ptr; 

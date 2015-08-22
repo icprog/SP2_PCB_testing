@@ -172,7 +172,7 @@ void UI_Task(uint_32 )
 	}
 }
 
-void ui_screen_update(void)
+ui_screen_update(void)
 {
 	switch (State_of_Screen)
 	{
@@ -562,7 +562,7 @@ void ui_screen_update(void)
 					ADC_deinit();	
 					State_of_Screen = UI_CALIBRATION_MENU;
 					display_Mainmenu();
-					Write_Press_Data();
+					Write_Pressure_Data();
 					break;
 				}
 				else if(Calib_result == INCOMPLETE)
@@ -570,7 +570,7 @@ void ui_screen_update(void)
 					if(Calib_status[PRESSURE_CALIB] == COMPLETED)
 					{
 						Stop_PDB_Timer();
-						Write_Press_Data();						
+						Write_Pressure_Data();						
 						Start_PDB_Timer();
 					}
 					display_Pressure_sensor_Calibration();	
