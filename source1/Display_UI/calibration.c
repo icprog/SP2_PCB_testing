@@ -67,7 +67,7 @@ CalibTable ROS2_Calib_Table[] = {
 
 CalibTable Accelerometer_Calib_Table[] = {
 		
-		//  condition       min voltage,    max voltage	
+		//  condition   min voltage,    max voltage	
 		{ 	"0°",      	-1.0,  			1.0,	180.0,	INCOMPLETE }, 
 		{ 	"30°", 		29.0,  			31.0,	180.0,	INCOMPLETE }, 
 		{ 	"60°",      59.0,  			61.0,	180.0,	INCOMPLETE }, 
