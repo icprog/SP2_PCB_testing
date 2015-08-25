@@ -211,12 +211,12 @@ MenuTableEntry Mainmenu_Table[] = {
 		{ 2, "ACCELEROMETER 1",    	display_Collect_Accelerometer_Calibration_Data,   	UI_ACCELEROMETER_CALIBRATION_SCREEN_DOWN}, 
 		{ 3, "ACCELEROMETER 2",    	display_Accelerometer_Calibration,   	UI_CALIBRATION_ACCELEROMETER 	}, 
 //		{ 3, "MAGNETOMETER",      	display_Magnetometer_Calibration,  		UI_CALIBRATION_MAGNETOMETER		}, 
-		{ 4, "MAGNETOMETER",	display_compass_calibration_screen,  		UI_COMPASS_CALIBRATION			}, 	
+//		{ 4, "MAGNETOMETER",	    display_compass_calibration_screen,  	UI_COMPASS_CALIBRATION			}, 	
 		{ 5, "ROS 1", 				display_ROS1_Calibration ,        		UI_CALIBRATION_ROS_1 			}, 
 		{ 6, "ROS 2", 				display_ROS2_Calibration ,        		UI_CALIBRATION_ROS_2 			},
 		{ 7, "GPS", 				display_GPS_Calibration,    			UI_CALIBRATION_GPS 				}, 
 
-#define NUM_OF_MAINMENU_ITEM 8
+#define NUM_OF_MAINMENU_ITEM 7
 
 };
 
