@@ -193,7 +193,7 @@ void Check_Serial()
 	}
 	fclose(flash_file);
 	
-	if((buffer[0]=='S')&&(buffer[1]=='P')&&(buffer[2]=='1'))
+	if((buffer[0]=='S')&&(buffer[1]=='P')&&(buffer[2]=='2'))
 	{
 		buffer[14] = 0x00;
 		strcpy(Serial_Numbr,buffer);

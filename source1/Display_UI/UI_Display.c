@@ -545,7 +545,7 @@ static void Create_IRDMSmenu_Content(void)
 	Draw_string_new(x_position, y_position, (uint_8 *) "CONDITION:", COLOUR_BLACK, MEDIUM_FONT);
 
 
-	x_position = (DISPLAY_X_MAX / 2)  -50 - (((strlen(IRDMS_Calib_Table[IRDMS_Condition_selection].Calib_condition)) / 2) * NUM_X_PIXEL_PER_CHAR);
+	x_position = (DISPLAY_X_MAX / 2)  - (50+12*IRDMS_Condition_selection) - (((strlen(IRDMS_Calib_Table[IRDMS_Condition_selection].Calib_condition)) / 2) * NUM_X_PIXEL_PER_CHAR);
 	y_position = 160;
 	Draw_string_new(x_position, y_position,
 			(uint_8 *) IRDMS_Calib_Table[IRDMS_Condition_selection].Calib_condition, 

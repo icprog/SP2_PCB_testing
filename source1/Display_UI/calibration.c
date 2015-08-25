@@ -29,13 +29,9 @@ volatile uint_8 Acc_reading_status = 0;
 CalibTable IRDMS_Calib_Table[] = {
 
 		//  condition       min voltage,    max voltage	
-		{ 	"20 CM",      	2.40,        	2.60,	5.5,	INCOMPLETE }, 
-		{ 	"40 CM", 		1.45, 		 	1.65,	5.5,	INCOMPLETE }, 
-		{	"60 CM",    	0.95,   	 	1.15,	5.5,	INCOMPLETE }, 
-		{  	"100 CM",      	0.60,  			0.80,	5.5,	INCOMPLETE }, 
-		{   "  0 CM",   	0.30,         	3.30, 	5.5, 	INCOMPLETE },
+		{ 	"COVERED",      	1.2,        	1.4,	5.5,	INCOMPLETE }, 
+		{ 	"POLE LENGTH", 		0.3, 		 	0.6,	5.5,	INCOMPLETE }, 
 
-		//TODO:- Change NUM_OF_IRDMS_CONDITION in calib.h
 };
 
 CalibTable Pressure_Calib_Table[] = {
