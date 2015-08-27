@@ -99,7 +99,7 @@ typedef struct
 	uint8_t Update_Status;
 	uint8_t CRC_Status;
 }IMAGE_PARA;
-extern IMAGE_PARA SP1_IMG,CALIB_IMG;
+extern IMAGE_PARA SP2_IMG,CALIB_IMG;
 
 extern TEST_COUNT_FLASH Test_Count_Flash;
 

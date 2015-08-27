@@ -318,7 +318,7 @@ uint_8 Create_file_system_if_sd_card_detected(boolean inserted)
 
 			printf("SD card is detected with proper file system. \n");
 			/**  Naming SD Card....**/
-			if (ioctl(filesystem_handle, IO_IOCTL_SET_VOLUME, (uint_32_ptr) "SP1") != MFS_NO_ERROR)
+			if (ioctl(filesystem_handle, IO_IOCTL_SET_VOLUME, (uint_32_ptr) "SP2") != MFS_NO_ERROR)
 			{
 				printf("Error While Naming SDcard.\n");
 			}
@@ -1861,12 +1861,12 @@ void Write_SDcard_DFU()
 	}
 	else
 	{
-		if((SP1_IMG.CRC_Status == 1) && (CALIB_IMG.CRC_Status == 1))
+		if((SP2_IMG.CRC_Status == 1) && (CALIB_IMG.CRC_Status == 1))
 			tmp_buff = 3; // Both files having update 
-		else if((SP1_IMG.CRC_Status == 0) && (CALIB_IMG.CRC_Status == 1))
+		else if((SP2_IMG.CRC_Status == 0) && (CALIB_IMG.CRC_Status == 1))
 			tmp_buff = 2; // CALIB IMG files having update 
-		else if((SP1_IMG.CRC_Status == 1) && (CALIB_IMG.CRC_Status == 0))
-			tmp_buff = 1; //SP1_IMG files having update
+		else if((SP2_IMG.CRC_Status == 1) && (CALIB_IMG.CRC_Status == 0))
+			tmp_buff = 1; //SP2_IMG files having update
 		
 		write(bat_fd_ptr,&tmp_buff,1);
 		fclose(bat_fd_ptr);	
