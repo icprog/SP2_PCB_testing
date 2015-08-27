@@ -227,32 +227,50 @@ uint_8 calibrate_Pressure_Sensor(void)
  *  Parameter:    None
  *  Return:       None
 -----------------------------------------------------------------------------*/
-uint_8 calibrate_ROS1_Sensor(void)
+uint_8 calibrate_ROS_Sensors(void)
 {	
-	uint_32 ROS_result = 0;
-	uint_32 sample_count = 0;
+	uint_32 ROS1_result = 0;
+	float 	ROS1_voltage = 0.0;
+	uint_32 ROS2_result = 0;
+	float 	ROS2_voltage = 0.0;
+	uint_32 sample_count1 = 0;
+	uint_32 sample_count2 = 0;
 	ADC_RESULT_STRUCT adc_out;
-	float 	ROS_voltage = 0.0;
-	
-	ui_timer_start(500);
 
+	
+	//collect ROS samples and calculate voltage
+	ui_timer_start(500);
 	while(Check_UI_Timer_Timeout() != TIME_OUT)
 	{
 		if (read(ros_sens1, &adc_out,sizeof(adc_out)))
 		{
-			ROS_result = ROS_result + adc_out.result;
-			sample_count++;
+			ROS1_result = ROS1_result + adc_out.result;
+			sample_count1++;
+		}
+		if (read(ros_sens2, &adc_out,sizeof(adc_out)))
+		{
+			ROS2_result = ROS2_result + adc_out.result;
+			sample_count2++;
 		}
 	}
-	ROS_result  = (ROS_result /sample_count);
-	ROS_voltage = (ROS_result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
-	
+	ROS1_result  = (ROS1_result /sample_count1);
+	ROS1_voltage = (ROS1_result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
+	ROS2_result  = (ROS2_result /sample_count2);
+	ROS2_voltage = (ROS2_result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
 
-	if((ROS_voltage >= ROS1_Calib_Table[ROS_Condition_selection].min_voltage) && 
-			(ROS_voltage <= ROS1_Calib_Table[ROS_Condition_selection].max_voltage))
+	//TODO: this function could be made smarter by seperating failing of ROS1 and ROS2 independently
+	boolean ros1_condition = (ROS1_voltage >= ROS1_Calib_Table[ROS_Condition_selection].min_voltage) && 
+			(ROS1_voltage <= ROS1_Calib_Table[ROS_Condition_selection].max_voltage);
+	boolean ros2_condition = (ROS2_voltage >= ROS2_Calib_Table[ROS_Condition_selection].min_voltage) && 
+			(ROS1_voltage <= ROS2_Calib_Table[ROS_Condition_selection].max_voltage);
+	
+	
+	if(ros1_condition && ros2_condition)
 	{
-		ROS1_Calib_Table[ROS_Condition_selection].curr_voltage = ROS_voltage;
+		ROS1_Calib_Table[ROS_Condition_selection].curr_voltage = ROS1_voltage;
 		ROS1_Calib_Table[ROS_Condition_selection].Calib_status = COMPLETED;
+		ROS2_Calib_Table[ROS_Condition_selection].curr_voltage = ROS2_voltage;
+		ROS2_Calib_Table[ROS_Condition_selection].Calib_status = COMPLETED;
 		display_ROS_Calibration();
 		
 		Time_Delay_Sleep(2500);
@@ -265,59 +283,6 @@ uint_8 calibrate_ROS1_Sensor(void)
 			{
 				return INCOMPLETE;
 			}
-		}
-					
-		return COMPLETED;	
-	}
-	else
-	{
-		ROS1_Calib_Table[ROS_Condition_selection].Calib_status = INCOMPLETE;
-//		ROS_Calib_Table[ROS_Condition_selection].curr_voltage = 5.5;
-		return OUT_OF_RANGE;
-	}
-	
-}
-
-/*-----------------------------------------------------------------------------
- *  Function:     calibrate_IRDMS
- *  Brief:        calibrate_IRDMS. 
- *  Parameter:    None
- *  Return:       None
------------------------------------------------------------------------------*/
-uint_8 calibrate_ROS2_Sensor(void)
-{	
-	uint_32 ROS_result = 0;
-	uint_32 sample_count = 0;
-	ADC_RESULT_STRUCT adc_out;
-	float 	ROS_voltage = 0.0;
-	
-	ui_timer_start(500);
-
-	while(Check_UI_Timer_Timeout() != TIME_OUT)
-	{
-		if (read(ros_sens1, &adc_out,sizeof(adc_out)))
-		{
-			ROS_result = ROS_result + adc_out.result;
-			sample_count++;
-		}
-	}
-	ROS_result  = (ROS_result /sample_count);
-	ROS_voltage = (ROS_result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
-	
-
-	if((ROS_voltage >= ROS2_Calib_Table[ROS_Condition_selection].min_voltage) && 
-			(ROS_voltage <= ROS2_Calib_Table[ROS_Condition_selection].max_voltage))
-	{
-		ROS2_Calib_Table[ROS_Condition_selection].curr_voltage = ROS_voltage;
-		ROS2_Calib_Table[ROS_Condition_selection].Calib_status = COMPLETED;
-		display_ROS_Calibration();
-		
-		Time_Delay_Sleep(2500);
-		ROS_Condition_selection++;
-		ROS_Condition_selection = ROS_Condition_selection % NUM_OF_ROS_CONDITION;	
-		
-		for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
-		{
 			if(ROS2_Calib_Table[i].Calib_status != COMPLETED)
 			{
 				return INCOMPLETE;
@@ -328,12 +293,15 @@ uint_8 calibrate_ROS2_Sensor(void)
 	}
 	else
 	{
+		ROS1_Calib_Table[ROS_Condition_selection].Calib_status = INCOMPLETE;
 		ROS2_Calib_Table[ROS_Condition_selection].Calib_status = INCOMPLETE;
 //		ROS_Calib_Table[ROS_Condition_selection].curr_voltage = 5.5;
 		return OUT_OF_RANGE;
 	}
 	
 }
+
+
 /*-----------------------------------------------------------------------------
  *  Function:     calibrate_IRDMS
  *  Brief:        calibrate_IRDMS. 

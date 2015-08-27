@@ -639,6 +639,9 @@ static void Create_ROS_Menu_Content(void)
 			COLOUR_BLACK, LARGE_FONT);
 
 	//Display ROS1
+	x_position = 35;
+	y_position = 251;
+	Draw_string_new(x_position, y_position, "ROS 1", COLOUR_BLACK, MEDIUM_FONT);
 	if (read(ros_sens1, &adc_out,sizeof(adc_out)))
 	{
 		//		printf("Adc_out = %X",adc_out.result);
@@ -648,19 +651,22 @@ static void Create_ROS_Menu_Content(void)
 	}
 
 	x_position = 30;
-	y_position = 251;
+	y_position = 281;
 	Draw_string_new(x_position, y_position, ROS1_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
-	Draw_Rect_Box(20,246,110,286,COLOUR_BLACK);
+	Draw_Rect_Box(20,276,110,316,COLOUR_BLACK);
 
 
 	if(ROS1_Calib_Table[ROS_Condition_selection].curr_voltage < 3.5)
 	{
 		sprintf(ROS1_voltage_string,"%0.2f V",ROS1_Calib_Table[ROS_Condition_selection].curr_voltage);
-		y_position = 300;
+		y_position = 330;
 		x_position = 30;
 		Draw_string_new(x_position, y_position, ROS1_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
 	}
 	//Display ROS2
+	x_position = 145;
+	y_position = 251;
+	Draw_string_new(x_position, y_position, "ROS 2", COLOUR_BLACK, MEDIUM_FONT);
 	if (read(ros_sens2, &adc_out,sizeof(adc_out)))
 	{
 		//		printf("Adc_out = %X",adc_out.result);
@@ -670,15 +676,15 @@ static void Create_ROS_Menu_Content(void)
 	}
 
 	x_position = 140;
-	y_position = 251;
+	y_position = 281;
 	Draw_string_new(x_position, y_position, ROS2_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
-	Draw_Rect_Box(130,246,220,286,COLOUR_BLACK);
+	Draw_Rect_Box(130,276,220,316,COLOUR_BLACK);
 
 
 	if(ROS2_Calib_Table[ROS_Condition_selection].curr_voltage < 3.5)
 	{
 		sprintf(ROS2_voltage_string,"%0.2f V",ROS2_Calib_Table[ROS_Condition_selection].curr_voltage);
-		y_position = 300;
+		y_position = 330;
 		x_position =140;
 		Draw_string_new(x_position, y_position, ROS2_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
 	}

@@ -1020,7 +1020,7 @@ ui_screen_update(void)
 
 			case RIGHT_BUTTON_PRESSED:
 
-				Calib_result = calibrate_ROS1_Sensor();
+				Calib_result = calibrate_ROS_Sensors();
 				if(Calib_result == COMPLETED)
 				{
 					Calib_status[ROS_CALIB] = COMPLETED;
