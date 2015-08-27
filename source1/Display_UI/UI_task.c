@@ -172,7 +172,7 @@ void UI_Task(uint_32 )
 	}
 }
 
-void ui_screen_update(void)
+ui_screen_update(void)
 {
 	switch (State_of_Screen)
 	{
