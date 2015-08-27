@@ -58,8 +58,7 @@ static void Create_GPSmenu_Content(void);
 
 static void Create_IRDMSmenu_Content(void);
 static void Create_PressureMenu_Content(void);
-static void Create_ROS1_Menu_Content(void);
-static void Create_ROS2_Menu_Content(void);
+static void Create_ROS_Menu_Content(void);
 static void Create_AccelerometerMenu_Content(void);
 static void Create_Accelerometer_Calib_Values_Error_Screen_Content(void);
 static void Create_MagnetometerMenu_Content(void);
@@ -74,8 +73,7 @@ void display_Accelerometer_Calibration(void);
 void display_Magnetometer_Calibration(void);
 void display_Collect_Accelerometer_Calibration_Data(void);
 extern void display_Accelerometer_Calib_Values_Error_Screen();
-void display_ROS1_Calibration(void);
-void display_ROS2_Calibration(void);
+void display_ROS_Calibration(void);
 void display_GPS_Calibration(void);
 void display_compass_calibration_screen(void);
 
@@ -98,7 +96,7 @@ void Battery_checkon_powerup(void);
 void Enable_all_sensors(void);
 void Disable_all_sensors(void);
 
-uint_8 Calib_status[8] ={0};
+uint_8 Calib_status[7] ={0};
 
 unsigned char Test_disp_ctr=0;
 
@@ -212,11 +210,10 @@ MenuTableEntry Mainmenu_Table[] = {
 		{ 3, "ACCELEROMETER 2",    	display_Accelerometer_Calibration,   	UI_CALIBRATION_ACCELEROMETER 	}, 
 //		{ 3, "MAGNETOMETER",      	display_Magnetometer_Calibration,  		UI_CALIBRATION_MAGNETOMETER		}, 
 //		{ 4, "MAGNETOMETER",	    display_compass_calibration_screen,  	UI_COMPASS_CALIBRATION			}, 	
-		{ 5, "ROS 1", 				display_ROS1_Calibration ,        		UI_CALIBRATION_ROS_1 			}, 
-		{ 6, "ROS 2", 				display_ROS2_Calibration ,        		UI_CALIBRATION_ROS_2 			},
-		{ 7, "GPS", 				display_GPS_Calibration,    			UI_CALIBRATION_GPS 				}, 
+		{ 5, "ROS", 				display_ROS_Calibration ,        		UI_CALIBRATION_ROS 			}, 
+		{ 6, "GPS", 				display_GPS_Calibration,    			UI_CALIBRATION_GPS 				}, 
 
-#define NUM_OF_MAINMENU_ITEM 7
+#define NUM_OF_MAINMENU_ITEM 6
 
 };
 
@@ -450,33 +447,14 @@ void display_compass_calibration_screen(void)
  * Parameter:   None
  * Return:      None
  -----------------------------------------------------------------------------*/
-void display_ROS1_Calibration(void)
+void display_ROS_Calibration(void)
 {
 	buff_clear();
 	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
 
 	Create_Title_calib("CALIBRATION",strlen("CALIBRATION"),0,2);
-	Create_Title_calib("ROS 1",strlen("ROS 1"),0,22);
-	Create_ROS1_Menu_Content();
-	Create_Footer( "BACK",strlen("BACK"), "SAVE",strlen("BACK"));
-
-	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    display_ROS_Calibration
- * Brief:       display_ROS_Calibration
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void display_ROS2_Calibration(void)
-{
-	buff_clear();
-	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
-
-	Create_Title_calib("CALIBRATION",strlen("CALIBRATION"),0,2);
-	Create_Title_calib("ROS 2",strlen("ROS 2"),0,22);
-	Create_ROS2_Menu_Content();
+	Create_Title_calib("ROS",strlen("ROS"),0,22);
+	Create_ROS_Menu_Content();
 	Create_Footer( "BACK",strlen("BACK"), "SAVE",strlen("BACK"));
 
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
@@ -635,102 +613,78 @@ static void Create_PressureMenu_Content(void)
  * Parameter:   None
  * Return:      None
  -----------------------------------------------------------------------------*/
-static void Create_ROS1_Menu_Content(void)
+static void Create_ROS_Menu_Content(void)
 {
 	uint_16 x_position, y_position;
-	float ROS_voltage = 0.0;
-	char  ROS_voltage_string[16];
+	float ROS1_voltage = 0.0;
+	char  ROS1_voltage_string[16];
+	float ROS2_voltage = 0.0;
+	char  ROS2_voltage_string[16];
 
 	ADC_RESULT_STRUCT adc_out;
 
-	memset(ROS_voltage_string,0x00,16);
+	memset(ROS1_voltage_string,0x00,16);
+	memset(ROS2_voltage_string,0x00,16);
+
 
 	x_position = (DISPLAY_X_MAX / 2) - 10 - (((strlen("CONDITION:")) / 2) * NUM_X_PIXEL_PER_CHAR);
 	y_position = 125;
 	Draw_string_new(x_position, y_position, (uint_8 *) "CONDITION:", COLOUR_BLACK, MEDIUM_FONT);
 
 
-	x_position = (DISPLAY_X_MAX / 2) -50 - (((strlen(ROS1_Calib_Table[ROS1_Condition_selection].Calib_condition)) / 2) * NUM_X_PIXEL_PER_CHAR);
+	x_position = (DISPLAY_X_MAX / 2) -50 - (((strlen(ROS1_Calib_Table[ROS_Condition_selection].Calib_condition)) / 2) * NUM_X_PIXEL_PER_CHAR);
 	y_position = 160;
 	Draw_string_new(x_position, y_position,
-			(uint_8 *) ROS1_Calib_Table[ROS1_Condition_selection].Calib_condition, 
+			(uint_8 *) ROS1_Calib_Table[ROS_Condition_selection].Calib_condition, 
 			COLOUR_BLACK, LARGE_FONT);
 
-
+	//Display ROS1
 	if (read(ros_sens1, &adc_out,sizeof(adc_out)))
 	{
 		//		printf("Adc_out = %X",adc_out.result);
-		ROS_voltage = (adc_out.result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
-		sprintf(ROS_voltage_string,"%0.2f V",ROS_voltage);
-		printf("\nROS Voltage =%0.2f V",ROS_voltage);
+		ROS1_voltage = (adc_out.result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
+		sprintf(ROS1_voltage_string,"%0.2f V",ROS1_voltage);
+		printf("\nROS1 Voltage =%0.2f V",ROS1_voltage);
 	}
 
-	x_position = (DISPLAY_X_MAX / 2) -5 - (((strlen(ROS_voltage_string)) / 2) * NUM_X_PIXEL_PER_CHAR);
+	x_position = 30;
 	y_position = 251;
-	Draw_string_new(x_position, y_position, ROS_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
-	Draw_Rect_Box(70,246,160,286,COLOUR_BLACK);
+	Draw_string_new(x_position, y_position, ROS1_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
+	Draw_Rect_Box(20,246,110,286,COLOUR_BLACK);
 
 
-	if(ROS1_Calib_Table[ROS1_Condition_selection].curr_voltage < 3.5)
+	if(ROS1_Calib_Table[ROS_Condition_selection].curr_voltage < 3.5)
 	{
-		sprintf(ROS_voltage_string,"%0.2f V",ROS1_Calib_Table[ROS1_Condition_selection].curr_voltage);
+		sprintf(ROS1_voltage_string,"%0.2f V",ROS1_Calib_Table[ROS_Condition_selection].curr_voltage);
 		y_position = 300;
-		x_position = (DISPLAY_X_MAX / 2) -5 - (((strlen(ROS_voltage_string)) / 2) * NUM_X_PIXEL_PER_CHAR);
-		Draw_string_new(x_position, y_position, ROS_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
+		x_position = 30;
+		Draw_string_new(x_position, y_position, ROS1_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
 	}
-
-}
-/*-----------------------------------------------------------------------------* 
- * Function:    Create_ROS_Menu_Content
- * Brief:       Turn gps on or off
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-static void Create_ROS2_Menu_Content(void)
-{
-	uint_16 x_position, y_position;
-	float ROS_voltage = 0.0;
-	char  ROS_voltage_string[16];
-
-	ADC_RESULT_STRUCT adc_out;
-
-	memset(ROS_voltage_string,0x00,16);
-
-	x_position = (DISPLAY_X_MAX / 2) - 10 - (((strlen("CONDITION:")) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 125;
-	Draw_string_new(x_position, y_position, (uint_8 *) "CONDITION:", COLOUR_BLACK, MEDIUM_FONT);
-
-
-	x_position = (DISPLAY_X_MAX / 2) -50 - (((strlen(ROS2_Calib_Table[ROS2_Condition_selection].Calib_condition)) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 160;
-	Draw_string_new(x_position, y_position,
-			(uint_8 *) ROS2_Calib_Table[ROS2_Condition_selection].Calib_condition, 
-			COLOUR_BLACK, LARGE_FONT);
-
-
+	//Display ROS2
 	if (read(ros_sens2, &adc_out,sizeof(adc_out)))
 	{
 		//		printf("Adc_out = %X",adc_out.result);
-		ROS_voltage = (adc_out.result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
-		sprintf(ROS_voltage_string,"%0.2f V",ROS_voltage);
-		printf("\nROS Voltage =%0.2f V",ROS_voltage);
+		ROS2_voltage = (adc_out.result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
+		sprintf(ROS2_voltage_string,"%0.2f V",ROS2_voltage);
+		printf("\nROS2 Voltage =%0.2f V",ROS2_voltage);
 	}
 
-	x_position = (DISPLAY_X_MAX / 2) -5 - (((strlen(ROS_voltage_string)) / 2) * NUM_X_PIXEL_PER_CHAR);
+	x_position = 140;
 	y_position = 251;
-	Draw_string_new(x_position, y_position, ROS_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
-	Draw_Rect_Box(70,246,160,286,COLOUR_BLACK);
+	Draw_string_new(x_position, y_position, ROS2_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
+	Draw_Rect_Box(130,246,220,286,COLOUR_BLACK);
 
 
-	if(ROS2_Calib_Table[ROS2_Condition_selection].curr_voltage < 3.5)
+	if(ROS2_Calib_Table[ROS_Condition_selection].curr_voltage < 3.5)
 	{
-		sprintf(ROS_voltage_string,"%0.2f V",ROS2_Calib_Table[ROS2_Condition_selection].curr_voltage);
+		sprintf(ROS2_voltage_string,"%0.2f V",ROS2_Calib_Table[ROS_Condition_selection].curr_voltage);
 		y_position = 300;
-		x_position = (DISPLAY_X_MAX / 2) -5 - (((strlen(ROS_voltage_string)) / 2) * NUM_X_PIXEL_PER_CHAR);
-		Draw_string_new(x_position, y_position, ROS_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
+		x_position =140;
+		Draw_string_new(x_position, y_position, ROS2_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
 	}
 
 }
+
 
 /*-----------------------------------------------------------------------------* 
  * Function:    Create_IRDMSmenu_Content
@@ -1530,8 +1484,8 @@ void Magnetometer_Condition_Key_down(void)
  -----------------------------------------------------------------------------*/
 void ROS1_Condition_Key_up(void)
 {
-	ROS1_Condition_selection++;
-	ROS1_Condition_selection = ROS1_Condition_selection % NUM_OF_ROS_CONDITION;
+	ROS_Condition_selection++;
+	ROS_Condition_selection = ROS_Condition_selection % NUM_OF_ROS_CONDITION;
 }
 
 /*-----------------------------------------------------------------------------* 
@@ -1542,12 +1496,12 @@ void ROS1_Condition_Key_up(void)
  -----------------------------------------------------------------------------*/
 void ROS1_Condition_Key_down(void)
 {
-	if (ROS1_Condition_selection == 0)
-		ROS1_Condition_selection = NUM_OF_ROS_CONDITION - 1;
+	if (ROS_Condition_selection == 0)
+		ROS_Condition_selection = NUM_OF_ROS_CONDITION - 1;
 	else
-		ROS1_Condition_selection--;
+		ROS_Condition_selection--;
 
-	ROS1_Condition_selection = ROS1_Condition_selection % NUM_OF_ROS_CONDITION;
+	ROS_Condition_selection = ROS_Condition_selection % NUM_OF_ROS_CONDITION;
 }
 
 /*-----------------------------------------------------------------------------* 
@@ -1558,8 +1512,8 @@ void ROS1_Condition_Key_down(void)
  -----------------------------------------------------------------------------*/
 void ROS2_Condition_Key_up(void)
 {
-	ROS2_Condition_selection++;
-	ROS2_Condition_selection = ROS2_Condition_selection % NUM_OF_ROS_CONDITION;
+	ROS_Condition_selection++;
+	ROS_Condition_selection = ROS_Condition_selection % NUM_OF_ROS_CONDITION;
 }
 
 /*-----------------------------------------------------------------------------* 
@@ -1570,12 +1524,12 @@ void ROS2_Condition_Key_up(void)
  -----------------------------------------------------------------------------*/
 void ROS2_Condition_Key_down(void)
 {
-	if (ROS2_Condition_selection == 0)
-		ROS2_Condition_selection = NUM_OF_ROS_CONDITION - 1;
+	if (ROS_Condition_selection == 0)
+		ROS_Condition_selection = NUM_OF_ROS_CONDITION - 1;
 	else
-		ROS2_Condition_selection--;
+		ROS_Condition_selection--;
 
-	ROS2_Condition_selection = ROS2_Condition_selection % NUM_OF_ROS_CONDITION;
+	ROS_Condition_selection = ROS_Condition_selection % NUM_OF_ROS_CONDITION;
 }
 
 /*-----------------------------------------------------------------------------* 

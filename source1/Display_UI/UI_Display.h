@@ -343,8 +343,8 @@ extern CalibTable Magnetometer_Calib_Table[];
 
 extern volatile uint_8 IRDMS_Condition_selection;
 extern volatile uint_8 Pressure_Condition_selection;
-extern volatile uint_8 ROS1_Condition_selection;
-extern volatile uint_8 ROS2_Condition_selection;
+extern volatile uint_8 ROS_Condition_selection;
+extern volatile uint_8 ROS_Condition_selection;
 extern volatile uint_8 Accelerometer_Condition_selection;
 extern volatile uint_8 Magnetometer_Condition_selection;
 extern volatile uint_8 Acc_reading_status;

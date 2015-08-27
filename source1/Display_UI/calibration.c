@@ -9,8 +9,7 @@
 
 extern void Write_IRDMS_Data(void);
 extern void Write_Pressure_Data(void);
-extern void Write_ROS1_Data(void);
-extern void Write_ROS2_Data(void);
+extern void Write_ROS_Data(void);
 extern void Write_GPS_Data(uint_32  sec);
 extern void Write_MAG_Data(void);
 extern void Write_ACC_Data(void);
@@ -19,8 +18,7 @@ extern void Update_Calib_Buff();
 //This variable is incremented and decremented according to navigation key 
 volatile uint_8 IRDMS_Condition_selection = 0;
 volatile uint_8 Pressure_Condition_selection = 0;
-volatile uint_8 ROS1_Condition_selection = 0;
-volatile uint_8 ROS2_Condition_selection = 0;
+volatile uint_8 ROS_Condition_selection = 0;
 volatile uint_8 Accelerometer_Condition_selection = 0;
 volatile uint_8 Magnetometer_Condition_selection = 0;
 volatile uint_8 Acc_reading_status = 0;
@@ -250,16 +248,16 @@ uint_8 calibrate_ROS1_Sensor(void)
 	ROS_voltage = (ROS_result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
 	
 
-	if((ROS_voltage >= ROS1_Calib_Table[ROS1_Condition_selection].min_voltage) && 
-			(ROS_voltage <= ROS1_Calib_Table[ROS1_Condition_selection].max_voltage))
+	if((ROS_voltage >= ROS1_Calib_Table[ROS_Condition_selection].min_voltage) && 
+			(ROS_voltage <= ROS1_Calib_Table[ROS_Condition_selection].max_voltage))
 	{
-		ROS1_Calib_Table[ROS1_Condition_selection].curr_voltage = ROS_voltage;
-		ROS1_Calib_Table[ROS1_Condition_selection].Calib_status = COMPLETED;
-		display_ROS1_Calibration();
+		ROS1_Calib_Table[ROS_Condition_selection].curr_voltage = ROS_voltage;
+		ROS1_Calib_Table[ROS_Condition_selection].Calib_status = COMPLETED;
+		display_ROS_Calibration();
 		
 		Time_Delay_Sleep(2500);
-		ROS1_Condition_selection++;
-		ROS1_Condition_selection = ROS1_Condition_selection % NUM_OF_ROS_CONDITION;	
+		ROS_Condition_selection++;
+		ROS_Condition_selection = ROS_Condition_selection % NUM_OF_ROS_CONDITION;	
 		
 		for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
 		{
@@ -273,7 +271,7 @@ uint_8 calibrate_ROS1_Sensor(void)
 	}
 	else
 	{
-		ROS1_Calib_Table[ROS1_Condition_selection].Calib_status = INCOMPLETE;
+		ROS1_Calib_Table[ROS_Condition_selection].Calib_status = INCOMPLETE;
 //		ROS_Calib_Table[ROS_Condition_selection].curr_voltage = 5.5;
 		return OUT_OF_RANGE;
 	}
@@ -307,16 +305,16 @@ uint_8 calibrate_ROS2_Sensor(void)
 	ROS_voltage = (ROS_result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
 	
 
-	if((ROS_voltage >= ROS2_Calib_Table[ROS2_Condition_selection].min_voltage) && 
-			(ROS_voltage <= ROS2_Calib_Table[ROS2_Condition_selection].max_voltage))
+	if((ROS_voltage >= ROS2_Calib_Table[ROS_Condition_selection].min_voltage) && 
+			(ROS_voltage <= ROS2_Calib_Table[ROS_Condition_selection].max_voltage))
 	{
-		ROS2_Calib_Table[ROS2_Condition_selection].curr_voltage = ROS_voltage;
-		ROS2_Calib_Table[ROS2_Condition_selection].Calib_status = COMPLETED;
-		display_ROS2_Calibration();
+		ROS2_Calib_Table[ROS_Condition_selection].curr_voltage = ROS_voltage;
+		ROS2_Calib_Table[ROS_Condition_selection].Calib_status = COMPLETED;
+		display_ROS_Calibration();
 		
 		Time_Delay_Sleep(2500);
-		ROS2_Condition_selection++;
-		ROS2_Condition_selection = ROS2_Condition_selection % NUM_OF_ROS_CONDITION;	
+		ROS_Condition_selection++;
+		ROS_Condition_selection = ROS_Condition_selection % NUM_OF_ROS_CONDITION;	
 		
 		for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
 		{
@@ -330,7 +328,7 @@ uint_8 calibrate_ROS2_Sensor(void)
 	}
 	else
 	{
-		ROS2_Calib_Table[ROS2_Condition_selection].Calib_status = INCOMPLETE;
+		ROS2_Calib_Table[ROS_Condition_selection].Calib_status = INCOMPLETE;
 //		ROS_Calib_Table[ROS_Condition_selection].curr_voltage = 5.5;
 		return OUT_OF_RANGE;
 	}
@@ -621,9 +619,10 @@ void Write_Pressure_Data(void)
 	}
 }
 
-void Write_ROS1_Data(void)
+void Write_ROS_Data(void)
 {
-	FLOAT_TO_CHAR conv;
+	FLOAT_TO_CHAR ROS1_conv;
+	FLOAT_TO_CHAR ROS2_conv;
 	MQX_FILE_PTR Ser_fd_ptr; 
 	char Ser_File_Name[50];
 	char Data_Buff[30];
@@ -631,49 +630,27 @@ void Write_ROS1_Data(void)
 	memset(Ser_File_Name,0x00,50);
 	strcpy(Ser_File_Name,"a:");	
 	strcat(Ser_File_Name,Serial_Numbr);
-	strcat(Ser_File_Name,"_ROS1_Calib.txt");
+	strcat(Ser_File_Name,"_ROS_Calib.txt");
 
 	Ser_fd_ptr = fopen(Ser_File_Name, "w");
 	if (Ser_fd_ptr != NULL)
 	{
 		for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
 		{	
-			conv.var_float	= ROS1_Calib_Table[i].curr_voltage;
-			memcpy(&Data_Buff[i*4],conv.var_char_float,4);
+			ROS1_conv.var_float	= ROS1_Calib_Table[i].curr_voltage;
+			ROS2_conv.var_float	= ROS2_Calib_Table[i].curr_voltage;
+
+			memcpy(&Data_Buff[(i*4)*2],ROS1_conv.var_char_float,4);
+			memcpy(&Data_Buff[(i*4)*2 + 4],ROS2_conv.var_char_float,4);
+
 //			Write_Calib(conv.var_char_float,ROS_ADDR_LOC,4);
-			fprintf(Ser_fd_ptr, "%s = ",ROS1_Calib_Table[i].Calib_condition);
+			fprintf(Ser_fd_ptr, "ROS1 %s = ",ROS1_Calib_Table[i].Calib_condition);
 			fprintf(Ser_fd_ptr, "%f\n",ROS1_Calib_Table[i].curr_voltage);
-		}
-		memcpy(&Calib_Flash_Buf[ROS_1*20],Data_Buff,4*NUM_OF_ROS_CONDITION);
-		Write_All_Calib_Dat();
-//		Write_Calib(Data_Buff,ROS_ADDR_LOC,4*NUM_OF_ROS_CONDITION);
-		fclose(Ser_fd_ptr);	
-	}
-}
-void Write_ROS2_Data(void)
-{
-	FLOAT_TO_CHAR conv;
-	MQX_FILE_PTR Ser_fd_ptr; 
-	char Ser_File_Name[50];
-	char Data_Buff[30];
-
-	memset(Ser_File_Name,0x00,50);
-	strcpy(Ser_File_Name,"a:");	
-	strcat(Ser_File_Name,Serial_Numbr);
-	strcat(Ser_File_Name,"_ROS2_Calib.txt");
-
-	Ser_fd_ptr = fopen(Ser_File_Name, "w");
-	if (Ser_fd_ptr != NULL)
-	{
-		for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
-		{	
-			conv.var_float	= ROS2_Calib_Table[i].curr_voltage;
-			memcpy(&Data_Buff[i*4],conv.var_char_float,4);
-//			Write_Calib(conv.var_char_float,ROS_ADDR_LOC,4);
-			fprintf(Ser_fd_ptr, "%s = ",ROS2_Calib_Table[i].Calib_condition);
+			fprintf(Ser_fd_ptr, "ROS2 %s = ",ROS2_Calib_Table[i].Calib_condition);
 			fprintf(Ser_fd_ptr, "%f\n",ROS2_Calib_Table[i].curr_voltage);
 		}
-		memcpy(&Calib_Flash_Buf[ROS_2*20],Data_Buff,4*NUM_OF_ROS_CONDITION);
+		memcpy(&Calib_Flash_Buf[ROS*20],Data_Buff,4*2*NUM_OF_ROS_CONDITION);
+
 		Write_All_Calib_Dat();
 //		Write_Calib(Data_Buff,ROS_ADDR_LOC,4*NUM_OF_ROS_CONDITION);
 		fclose(Ser_fd_ptr);	
@@ -808,37 +785,20 @@ void Update_Calib_Buff()
 	// Reading ROS_ADDR_LOC data from flash
 //	Read_Calib(Data_Buff,ROS_ADDR_LOC,4*NUM_OF_ROS_CONDITION);
 	
-	if((Calib_Flash_Buf[ROS_1*20]==0xFF)&&(Calib_Flash_Buf[(ROS_1*20)+1]==0xFF)&&
-	   (Calib_Flash_Buf[(ROS_1*20)+2]==0xFF)&&(Calib_Flash_Buf[(ROS_1*20)+3]==0xFF))
+	if((Calib_Flash_Buf[ROS*20]==0xFF)&&(Calib_Flash_Buf[(ROS*20)+1]==0xFF)&&
+	   (Calib_Flash_Buf[(ROS*20)+2]==0xFF)&&(Calib_Flash_Buf[(ROS*20)+3]==0xFF))
 	{
 		// no data in flash
 	}
 	else
 	{
 		// setting status
-		memcpy(Data_Buff,&Calib_Flash_Buf[ROS_1*20],4*NUM_OF_ROS_CONDITION);
-		Calib_status[ROS1_CALIB] = 1;
+		memcpy(Data_Buff,&Calib_Flash_Buf[ROS*20],4*NUM_OF_ROS_CONDITION);
+		Calib_status[ROS_CALIB] = 1;
 		for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
 		{	
 			memcpy(conv.var_char_float,&Data_Buff[i*4],4);
 			ROS1_Calib_Table[i].curr_voltage = conv.var_float;
-		}
-	}
-	
-	if((Calib_Flash_Buf[ROS_2*20]==0xFF)&&(Calib_Flash_Buf[(ROS_2*20)+1]==0xFF)&&
-	   (Calib_Flash_Buf[(ROS_2*20)+2]==0xFF)&&(Calib_Flash_Buf[(ROS_2*20)+3]==0xFF))
-	{
-		// no data in flash
-	}
-	else
-	{
-		// setting status
-		memcpy(Data_Buff,&Calib_Flash_Buf[ROS_2*20],4*NUM_OF_ROS_CONDITION);
-		Calib_status[ROS2_CALIB] = 1;
-		for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
-		{	
-			memcpy(conv.var_char_float,&Data_Buff[i*4],4);
-			ROS2_Calib_Table[i].curr_voltage = conv.var_float;
 		}
 	}
 	

@@ -196,7 +196,7 @@ ui_screen_update(void)
 				State_of_Screen = Mainmenu_Table[Main_menu_selection].UI_state;
 
 				if ((State_of_Screen == UI_CALIBRATION_IRDMS) || (State_of_Screen == UI_CALIBRATION_PRESSURE) 
-						|| (State_of_Screen == UI_CALIBRATION_ROS_1) || (State_of_Screen == UI_CALIBRATION_ROS_2))
+						|| (State_of_Screen == UI_CALIBRATION_ROS))
 				{							
 					ADC_Init();
 					ui_timer_start(CAL_REFRESH_TIME);
@@ -1005,7 +1005,7 @@ ui_screen_update(void)
 		}
 		break;
 
-	case UI_CALIBRATION_ROS_1:
+	case UI_CALIBRATION_ROS:
 
 		if (Button_Press_Status != BUTTON_PRESS_NOT_PENDING)
 		{
@@ -1023,7 +1023,7 @@ ui_screen_update(void)
 				Calib_result = calibrate_ROS1_Sensor();
 				if(Calib_result == COMPLETED)
 				{
-					Calib_status[ROS1_CALIB] = COMPLETED;
+					Calib_status[ROS_CALIB] = COMPLETED;
 					for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
 					{
 						ROS1_Calib_Table[i].Calib_status = INCOMPLETE;
@@ -1031,23 +1031,23 @@ ui_screen_update(void)
 					ADC_deinit();	
 					State_of_Screen = UI_CALIBRATION_MENU;
 					display_Mainmenu();
-					Write_ROS1_Data();
+					Write_ROS_Data();
 					break;
 				}
 				else if(Calib_result == INCOMPLETE)
 				{					
-					if(Calib_status[ROS1_CALIB] == COMPLETED)
+					if(Calib_status[ROS_CALIB] == COMPLETED)
 					{
 						Stop_PDB_Timer();
-						Write_ROS1_Data();						
+						Write_ROS_Data();						
 						Start_PDB_Timer();
 					}
-					display_ROS1_Calibration();	
+					display_ROS_Calibration();	
 				}
 				else if(Calib_result == OUT_OF_RANGE)
 				{
 					ADC_deinit();
-					Next_State = UI_CALIBRATION_ROS_1;
+					Next_State = UI_CALIBRATION_ROS;
 					State_of_Screen = UI_CALIBRATION_ERROR_SCREEN;					
 					Refresh_Lcd_Buffer((uint_8 *) Calibration_SENSOR_ERROR);
 				}
@@ -1055,16 +1055,16 @@ ui_screen_update(void)
 
 			case UP_BUTTON_PRESSED:
 				printf("Up Button Pressed \n");
-				State_of_Screen = UI_CALIBRATION_ROS_1;
+				State_of_Screen = UI_CALIBRATION_ROS;
 				ROS1_Condition_Key_up();
-				display_ROS1_Calibration();
+				display_ROS_Calibration();
 				break;
 
 			case DOWN_BUTTON_PRESSED:
 				printf("Down Button Pressed \n");
-				State_of_Screen = UI_CALIBRATION_ROS_1;
+				State_of_Screen = UI_CALIBRATION_ROS;
 				ROS1_Condition_Key_down();
-				display_ROS1_Calibration();
+				display_ROS_Calibration();
 				break;
 
 			default:
@@ -1074,89 +1074,13 @@ ui_screen_update(void)
 			Button_Press_Status = BUTTON_PRESS_NOT_PENDING;
 		}
 
-		if ((Check_UI_Timer_Timeout() == TIME_OUT) && (State_of_Screen == UI_CALIBRATION_ROS_1))
+		if ((Check_UI_Timer_Timeout() == TIME_OUT) && (State_of_Screen == UI_CALIBRATION_ROS))
 		{          
-			display_ROS1_Calibration();
+			display_ROS_Calibration();
 			ui_timer_start(CAL_REFRESH_TIME);
 		}		
 		break;
 		
-	case UI_CALIBRATION_ROS_2:
-
-			if (Button_Press_Status != BUTTON_PRESS_NOT_PENDING)
-			{
-				switch (Button_Press_Status)
-				{
-				case LEFT_BUTTON_PRESSED:
-					printf("Left Button Pressed \n");
-					ADC_deinit();			
-					State_of_Screen = UI_CALIBRATION_MENU;
-					display_Mainmenu();
-					break;
-
-				case RIGHT_BUTTON_PRESSED:
-
-					Calib_result = calibrate_ROS2_Sensor();
-					if(Calib_result == COMPLETED)
-					{
-						Calib_status[ROS2_CALIB] = COMPLETED;
-						for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
-						{
-							ROS2_Calib_Table[i].Calib_status = INCOMPLETE;
-						}
-						ADC_deinit();	
-						State_of_Screen = UI_CALIBRATION_MENU;
-						display_Mainmenu();
-						Write_ROS2_Data();
-						break;
-					}
-					else if(Calib_result == INCOMPLETE)
-					{					
-						if(Calib_status[ROS2_CALIB] == COMPLETED)
-						{
-							Stop_PDB_Timer();
-							Write_ROS2_Data();						
-							Start_PDB_Timer();
-						}
-						display_ROS2_Calibration();	
-					}
-					else if(Calib_result == OUT_OF_RANGE)
-					{
-						ADC_deinit();
-						Next_State = UI_CALIBRATION_ROS_2;
-						State_of_Screen = UI_CALIBRATION_ERROR_SCREEN;					
-						Refresh_Lcd_Buffer((uint_8 *) Calibration_SENSOR_ERROR);
-					}
-					break;
-
-				case UP_BUTTON_PRESSED:
-					printf("Up Button Pressed \n");
-					State_of_Screen = UI_CALIBRATION_ROS_2;
-					ROS2_Condition_Key_up();
-					display_ROS2_Calibration();
-					break;
-
-				case DOWN_BUTTON_PRESSED:
-					printf("Down Button Pressed \n");
-					State_of_Screen = UI_CALIBRATION_ROS_2;
-					ROS2_Condition_Key_down();
-					display_ROS2_Calibration();
-					break;
-
-				default:
-					printf("Invalid Button Pressed \n");
-					break;
-				}
-				Button_Press_Status = BUTTON_PRESS_NOT_PENDING;
-			}
-
-			if ((Check_UI_Timer_Timeout() == TIME_OUT) && (State_of_Screen == UI_CALIBRATION_ROS_2))
-			{          
-				display_ROS2_Calibration();
-				ui_timer_start(CAL_REFRESH_TIME);
-			}		
-			break;
-
 	case UI_CALIBRATION_GPS:
 		//		printf("\nUI_FIRMWARE_UPDATE\n");
 		if (Button_Press_Status != BUTTON_PRESS_NOT_PENDING)
@@ -1274,16 +1198,11 @@ ui_screen_update(void)
 					ui_timer_start(CAL_REFRESH_TIME);	
 					break;
 
-				case UI_CALIBRATION_ROS_1:
+				case UI_CALIBRATION_ROS:
 					ADC_Init();
-					display_ROS1_Calibration();
+					display_ROS_Calibration();
 					ui_timer_start(CAL_REFRESH_TIME);
 
-					break;
-				case UI_CALIBRATION_ROS_2:
-					ADC_Init();
-					display_ROS2_Calibration();
-					ui_timer_start(CAL_REFRESH_TIME);
 					break;
 					
 				case UI_CALIBRATION_GPS:
