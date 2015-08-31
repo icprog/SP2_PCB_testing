@@ -236,6 +236,8 @@ uint_8 calibrate_ROS_Sensors(void)
 	uint_32 sample_count1 = 0;
 	uint_32 sample_count2 = 0;
 	ADC_RESULT_STRUCT adc_out;
+	boolean ros1_condition;
+	boolean ros2_condition;
 
 	
 	//collect ROS samples and calculate voltage
@@ -259,12 +261,13 @@ uint_8 calibrate_ROS_Sensors(void)
 	ROS2_voltage = (ROS2_result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
 
 	//TODO: this function could be made smarter by seperating failing of ROS1 and ROS2 independently
-	boolean ros1_condition = (ROS1_voltage >= ROS1_Calib_Table[ROS_Condition_selection].min_voltage) && 
+    ros1_condition = (ROS1_voltage >= ROS1_Calib_Table[ROS_Condition_selection].min_voltage) && 
 			(ROS1_voltage <= ROS1_Calib_Table[ROS_Condition_selection].max_voltage);
-	boolean ros2_condition = (ROS2_voltage >= ROS2_Calib_Table[ROS_Condition_selection].min_voltage) && 
-			(ROS1_voltage <= ROS2_Calib_Table[ROS_Condition_selection].max_voltage);
-	
-	
+	ros2_condition = (ROS2_voltage >= ROS2_Calib_Table[ROS_Condition_selection].min_voltage) && 
+			(ROS2_voltage <= ROS2_Calib_Table[ROS_Condition_selection].max_voltage);
+	printf("ROS condition: %d \n", ROS_Condition_selection);
+	printf("max: %f, min: %f \n", ROS1_Calib_Table[ROS_Condition_selection].max_voltage, ROS1_Calib_Table[ROS_Condition_selection].min_voltage);
+	printf("ros1 cond: %d, ros2 cond: %d \n", ros1_condition, ros2_condition);
 	if(ros1_condition && ros2_condition)
 	{
 		ROS1_Calib_Table[ROS_Condition_selection].curr_voltage = ROS1_voltage;
@@ -596,7 +599,7 @@ void Write_ROS_Data(void)
 	char Data_Buff[30];
 
 	memset(Ser_File_Name,0x00,50);
-	strcpy(Ser_File_Name,"a:");	
+	strcpy(Ser_File_Name,"a:");
 	strcat(Ser_File_Name,Serial_Numbr);
 	strcat(Ser_File_Name,"_ROS_Calib.txt");
 
@@ -617,7 +620,7 @@ void Write_ROS_Data(void)
 			fprintf(Ser_fd_ptr, "ROS2 %s = ",ROS2_Calib_Table[i].Calib_condition);
 			fprintf(Ser_fd_ptr, "%f\n",ROS2_Calib_Table[i].curr_voltage);
 		}
-		memcpy(&Calib_Flash_Buf[ROS*20],Data_Buff,4*2*NUM_OF_ROS_CONDITION);
+		memcpy(&Calib_Flash_Buf[ROS*20],Data_Buff,4*2*NUM_OF_ROS_CONDITION); //the * 2 is for 2 sensors
 
 		Write_All_Calib_Dat();
 //		Write_Calib(Data_Buff,ROS_ADDR_LOC,4*NUM_OF_ROS_CONDITION);
@@ -761,12 +764,14 @@ void Update_Calib_Buff()
 	else
 	{
 		// setting status
-		memcpy(Data_Buff,&Calib_Flash_Buf[ROS*20],4*NUM_OF_ROS_CONDITION);
+		memcpy(Data_Buff,&Calib_Flash_Buf[ROS*20],4*2*NUM_OF_ROS_CONDITION); //the * 2 is for 2 sensors
 		Calib_status[ROS_CALIB] = 1;
 		for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
 		{	
-			memcpy(conv.var_char_float,&Data_Buff[i*4],4);
+			memcpy(conv.var_char_float,&Data_Buff[(i*4)*2],4);
 			ROS1_Calib_Table[i].curr_voltage = conv.var_float;
+			memcpy(conv.var_char_float,&Data_Buff[(i*4)*2 + 4],4);
+			ROS2_Calib_Table[i].curr_voltage = conv.var_float;
 		}
 	}
 	

@@ -96,7 +96,7 @@ void Battery_checkon_powerup(void);
 void Enable_all_sensors(void);
 void Disable_all_sensors(void);
 
-uint_8 Calib_status[7] ={0};
+uint_8 Calib_status[6] ={0};
 
 unsigned char Test_disp_ctr=0;
 
@@ -663,6 +663,12 @@ static void Create_ROS_Menu_Content(void)
 		x_position = 30;
 		Draw_string_new(x_position, y_position, ROS1_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
 	}
+	else
+	{
+		y_position = 330;
+		x_position =30;
+		Draw_string_new(x_position, y_position, "BLAH", COLOUR_BLACK, MEDIUM_FONT);
+	}
 	//Display ROS2
 	x_position = 145;
 	y_position = 251;
@@ -680,13 +686,18 @@ static void Create_ROS_Menu_Content(void)
 	Draw_string_new(x_position, y_position, ROS2_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
 	Draw_Rect_Box(130,276,220,316,COLOUR_BLACK);
 
-
 	if(ROS2_Calib_Table[ROS_Condition_selection].curr_voltage < 3.5)
 	{
 		sprintf(ROS2_voltage_string,"%0.2f V",ROS2_Calib_Table[ROS_Condition_selection].curr_voltage);
 		y_position = 330;
 		x_position =140;
 		Draw_string_new(x_position, y_position, ROS2_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
+	}
+	else
+	{
+		y_position = 330;
+		x_position =140;
+		Draw_string_new(x_position, y_position, "BLAH", COLOUR_BLACK, MEDIUM_FONT);
 	}
 
 }
