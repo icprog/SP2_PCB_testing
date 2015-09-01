@@ -30,6 +30,7 @@
 #include "Sensor_Configuration.h"
 #include "Bulk_transfer.h"
 #include "common_headers.h"
+#include "matrix_operations.h"
 
 #define BATTERY_VALUE_DISPLAY_ENABLE 0
 void Increment_Default_Graph_View_from_Settings(void);
@@ -53,8 +54,6 @@ static void Create_Mainmenu_Content(void);
 //static void Create_Settings_Selection_Content(void);
 extern void Change_Defualt_Gragh_View(void);
 static void Create_GPSmenu_Content(void);
-
-
 
 static void Create_IRDMSmenu_Content(void);
 static void Create_PressureMenu_Content(void);
@@ -210,10 +209,11 @@ MenuTableEntry Mainmenu_Table[] = {
 		{ 3, "ACCELEROMETER 2",    	display_Accelerometer_Calibration,   	UI_CALIBRATION_ACCELEROMETER 	}, 
 //		{ 3, "MAGNETOMETER",      	display_Magnetometer_Calibration,  		UI_CALIBRATION_MAGNETOMETER		}, 
 //		{ 4, "MAGNETOMETER",	    display_compass_calibration_screen,  	UI_COMPASS_CALIBRATION			}, 	
-		{ 5, "ROS", 				display_ROS_Calibration ,        		UI_CALIBRATION_ROS 			}, 
-		{ 6, "GPS", 				display_GPS_Calibration,    			UI_CALIBRATION_GPS 				}, 
+		{ 4, "ROS", 				display_ROS_Calibration ,        		UI_CALIBRATION_ROS 		    	}, 
+		{ 5, "GPS", 				display_GPS_Calibration,    			UI_CALIBRATION_GPS 				}, 
+		{ 6, "MATRIX TEST", 		matrix_test,    						MATRIX_TEST	},
 
-#define NUM_OF_MAINMENU_ITEM 6
+#define NUM_OF_MAINMENU_ITEM 7
 
 };
 
@@ -300,6 +300,8 @@ MenuTableEntry Defaultgraphview_Table[] = {
 #define NUM_OF_DEFAULTGRAPHVIEW_ITEM 5	
 
 };
+
+
 
 /*-----------------------------------------------------------------------------* 
  * Function:    display_IRDMS_Calibration

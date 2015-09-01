@@ -11,6 +11,7 @@
  *****************************************************************************/
 
 #include "common_headers.h"
+#include "matrix_operations.h"
 
 TEST_COUNT_FLASH Test_Count_Flash;
 
@@ -200,6 +201,11 @@ ui_screen_update(void)
 				{							
 					ADC_Init();
 					ui_timer_start(CAL_REFRESH_TIME);
+				}
+				else if(State_of_Screen == MATRIX_TEST)
+				{
+					printf("matrix ui menu item selected \n");
+					matrix_test();
 				}
 				else if ( (State_of_Screen == UI_CALIBRATION_ACCELEROMETER))
 					//						|| (State_of_Screen == UI_CALIBRATION_MAGNETOMETER))
@@ -1357,8 +1363,9 @@ ui_screen_update(void)
 		}
 		break;
 
-		break; 
-
+	case MATRIX_TEST:
+		matrix_test();
+		break;
 
 	default:
 		printf("\nInvalid screen\n");
