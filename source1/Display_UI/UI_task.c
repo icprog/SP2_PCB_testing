@@ -1365,6 +1365,8 @@ ui_screen_update(void)
 
 	case MATRIX_TEST:
 		matrix_test();
+		State_of_Screen = UI_CALIBRATION_MENU;
+		
 		break;
 
 	default:

@@ -20,10 +20,9 @@ struct matrix_struct
 	float mat[10][10]; //maximum size of matrix allowed
 };
 
-void transpose(struct matrix_struct *input, struct matrix_struct *output, int m, int n);
-void inverse(float * input, float * output, uint8_t m, uint8_t n);
-//void m_mult(float * a, float * b, float * output, uint8_t m1, uint8_t n1, uint8_t m2, uint8_t n2);
-
+void transpose(struct matrix_struct *input, struct matrix_struct *output);
+void inverse(struct matrix_struct *input, struct matrix_struct *output);
+void m_mult(struct matrix_struct *a, struct matrix_struct *b, struct matrix_struct *product);
 void matrix_test(void);
  
 #endif //__MATRIX_OPERATIONS_H__
