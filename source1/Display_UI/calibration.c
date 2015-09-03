@@ -92,14 +92,12 @@ void transform_raw_acc(void)
 	ax = (double) Ax / ACCELEROMETER_GAIN;
 	ay = (double) Ay / ACCELEROMETER_GAIN;
 	az = (double) Az / ACCELEROMETER_GAIN;
-//	printf("\n Before %d,%d,%d",Ax,Ay,Az);
-	a->y = (float) ((ACC_Data.data.ACC11*ax)+(ACC_Data.data.ACC12*ay)+(ACC_Data.data.ACC13*az)+ACC_Data.data.ACC10);
-	a->x = (float) ((ACC_Data.data.ACC00*ax)+(ACC_Data.data.ACC22*ay)+(ACC_Data.data.ACC23*az)+ACC_Data.data.ACC20);
-	a->z = (float) ((ACC_Data.data.ACC31*ax)+(ACC_Data.data.ACC32*ay)+(ACC_Data.data.ACC33*az)+ACC_Data.data.ACC30);
-//	printf("\n Before %f,%f,%f\n\r",a->x,a->y,a->z);
-	Gx = (int)a->y; 	
-	Gy = (int)a->x;	
-	Gz = (int)a->z;
+
+	Gx = (float) ((ACC_Data.data.ACC00*ax)+(ACC_Data.data.ACC10*ay)+(ACC_Data.data.ACC20*az)+ACC_Data.data.ACC30);
+	Gy = (float) ((ACC_Data.data.ACC01*ax)+(ACC_Data.data.ACC11*ay)+(ACC_Data.data.ACC21*az)+ACC_Data.data.ACC31);
+	Gz = (float) ((ACC_Data.data.ACC02*ax)+(ACC_Data.data.ACC12*ay)+(ACC_Data.data.ACC22*az)+ACC_Data.data.ACC32);
+	
+	
 }
 void acc_transform_wrapper(void)
 {
@@ -142,18 +140,18 @@ void acc_transform_wrapper(void)
 	calculate_acc_transform(&w, &Y, &acc_transform_matrix);
 	
 	//populate the ACC data structure //TODO this structure is a bit bulky
-	ACC_Data.data.ACC00 = X.acc_transform_matrix[0][0];
-	ACC_Data.data.ACC01 = X.acc_transform_matrix[0][1];
-	ACC_Data.data.ACC02 = X.acc_transform_matrix[0][2];
-	ACC_Data.data.ACC10 = X.acc_transform_matrix[1][0];
-	ACC_Data.data.ACC11 = X.acc_transform_matrix[1][1];
-	ACC_Data.data.ACC12 = X.acc_transform_matrix[1][2];
-	ACC_Data.data.ACC20 = X.acc_transform_matrix[2][0];
-	ACC_Data.data.ACC21 = X.acc_transform_matrix[2][1];
-	ACC_Data.data.ACC22 = X.acc_transform_matrix[2][2];
-	ACC_Data.data.ACC30 = X.acc_transform_matrix[3][0];
-	ACC_Data.data.ACC31 = X.acc_transform_matrix[3][1];
-	ACC_Data.data.ACC32 = X.acc_transform_matrix[3][2];
+	ACC_Data.data.ACC00 = acc_transform_matrix.mat[0][0];
+	ACC_Data.data.ACC01 = acc_transform_matrix.mat[0][1];
+	ACC_Data.data.ACC02 = acc_transform_matrix.mat[0][2];
+	ACC_Data.data.ACC10 = acc_transform_matrix.mat[1][0];
+	ACC_Data.data.ACC11 = acc_transform_matrix.mat[1][1];
+	ACC_Data.data.ACC12 = acc_transform_matrix.mat[1][2];
+	ACC_Data.data.ACC20 = acc_transform_matrix.mat[2][0];
+	ACC_Data.data.ACC21 = acc_transform_matrix.mat[2][1];
+	ACC_Data.data.ACC22 = acc_transform_matrix.mat[2][2];
+	ACC_Data.data.ACC30 = acc_transform_matrix.mat[3][0];
+	ACC_Data.data.ACC31 = acc_transform_matrix.mat[3][1];
+	ACC_Data.data.ACC32 = acc_transform_matrix.mat[3][2];
 	
 	Write_Acc_Calib_Dat(); //write ACC values to flash
 	printf("accelration calibration complete \n");
@@ -451,7 +449,51 @@ uint_8 calibrate_ROS_Sensors(void)
 }
 
 
-
+uint_8 calibrate_Accelerometer2(void)
+{	
+	float pitch, roll;
+	float slope;
+	float angle_sum = 0.0;
+	int sample_count = 0.0;
+	ui_timer_start(500);
+	while(Check_UI_Timer_Timeout() != TIME_OUT)
+	{
+		get_euler_angles(&roll, &pitch);
+		angle_sum += pitch;
+		sample_count++;			
+	}
+	
+	slope = angle_sum/sample_count;
+	if((slope >= Accelerometer_Calib_Table[Accelerometer_Condition_selection].min_voltage) && 
+			(slope <= Accelerometer_Calib_Table[Accelerometer_Condition_selection].max_voltage))
+	{
+		Accelerometer_Calib_Table[Accelerometer_Condition_selection].curr_voltage = slope;
+		Accelerometer_Calib_Table[Accelerometer_Condition_selection].Calib_status = COMPLETED;
+		Acc_reading_status = 1;
+		display_Accelerometer_Calibration();
+		
+		Time_Delay_Sleep(2500);
+		Accelerometer_Condition_selection++;
+		Accelerometer_Condition_selection = Accelerometer_Condition_selection % NUM_OF_ACC_CONDITION;	
+		
+		for(int i =0; i < NUM_OF_ACC_CONDITION; i++)
+		{
+			if(Accelerometer_Calib_Table[i].Calib_status != COMPLETED)
+			{
+				return INCOMPLETE;
+			}
+		}
+					
+		return COMPLETED;	
+	}
+	else
+	{
+		printf("\nSlope %f\n", slope);
+		Accelerometer_Calib_Table[Accelerometer_Condition_selection].Calib_status = INCOMPLETE;
+//		Accelerometer_Calib_Table[Accelerometer_Condition_selection].curr_voltage = 180.0;
+		return OUT_OF_RANGE;
+	}
+}
 /*-----------------------------------------------------------------------------
  *  Function:     calibrate_IRDMS
  *  Brief:        calibrate_IRDMS. 

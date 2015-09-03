@@ -164,7 +164,6 @@ void UI_Task(uint_32 )
 	Update_Calib_Buff();
 	calib_file_check();
 	State_of_Screen = UI_CALIBRATION_MENU;
-	Read_Acc_Calib_values_from_Sd_Card();
 	display_Mainmenu();
 
 	while(1)
@@ -205,12 +204,6 @@ ui_screen_update(void)
 				else if ( (State_of_Screen == UI_CALIBRATION_ACCELEROMETER))
 					//						|| (State_of_Screen == UI_CALIBRATION_MAGNETOMETER))
 				{
-					if(Read_Acc_Calib_values_from_Sd_Card() == 0)
-					{
-						State_of_Screen = UI_ACCELEROMETER_CALIB_ERROR_SCREEN;
-						display_Accelerometer_Calib_Values_Error_Screen();
-						break;
-					}
 					lsm303_i2c0_init();
 					Start_LSM();
 					ui_timer_start(CAL_REFRESH_TIME);
@@ -359,7 +352,6 @@ ui_screen_update(void)
 					Read_calib_data("a:ROS_calib_data.txt",&ROS2_Calib_Table);
 					Read_calib_data("a:Accelerometer_calib_data.txt",&Accelerometer_Calib_Table);
 					Read_calib_data("a:Magnetometer_calib_data.txt",&Magnetometer_Calib_Table);
-					Read_Acc_Calib_values_from_Sd_Card();
 					State_of_Screen = UI_FIRMWARE_CORRUPT;
 					Display_Firmware_Corrupted();
 				}
@@ -374,7 +366,6 @@ ui_screen_update(void)
 				Read_calib_data("a:ROS_calib_data.txt",&ROS2_Calib_Table);
 				Read_calib_data("a:Accelerometer_calib_data.txt",&Accelerometer_Calib_Table);
 				Read_calib_data("a:Magnetometer_calib_data.txt",&Magnetometer_Calib_Table);
-				Read_Acc_Calib_values_from_Sd_Card();
 				State_of_Screen = UI_CALIBRATION_MENU;
 				display_Mainmenu();
 			}
@@ -839,7 +830,7 @@ ui_screen_update(void)
 
 			case RIGHT_BUTTON_PRESSED:
 
-				Calib_result = calibrate_Accelerometer();
+				Calib_result = calibrate_Accelerometer2();
 				if(Calib_result == COMPLETED)
 				{
 					Calib_status[ACCELEROMETER_CALIB] = COMPLETED;

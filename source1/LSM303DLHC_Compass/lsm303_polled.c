@@ -99,30 +99,12 @@ float Gx, Gy, Gz;
 uint8_t calib_count =100;
 uint8_t Magnetometer_Calib_process=1;
 
-
-
-/*-----------------------------------------------------------------------------
- *  Function:     calibrate_acc_with_values
- *  Brief:        Update calibrate data and save them to flash 
- *  Parameter:    None
- *  Return:       None
------------------------------------------------------------------------------*/
-void calibrate_acc_with_calib_values(vector *a)
+void get_euler_angles(float *roll, float *pitch)
 {
-	double ax,ay,az;
-
-	ax = (double) Ax / ACCELROMETER_GAIN;
-	ay = (double) Ay / ACCELROMETER_GAIN;
-	az = (double) Az / ACCELROMETER_GAIN;
-//	printf("\n Before %d,%d,%d",Ax,Ay,Az);
-	a->y = (float) ((ACC_Data.data.ACC11*ax)+(ACC_Data.data.ACC12*ay)+(ACC_Data.data.ACC13*az)+ACC_Data.data.ACC10);
-	a->x = (float) ((ACC_Data.data.ACC00*ax)+(ACC_Data.data.ACC22*ay)+(ACC_Data.data.ACC23*az)+ACC_Data.data.ACC20);
-	a->z = (float) ((ACC_Data.data.ACC31*ax)+(ACC_Data.data.ACC32*ay)+(ACC_Data.data.ACC33*az)+ACC_Data.data.ACC30);
-//	printf("\n Before %f,%f,%f\n\r",a->x,a->y,a->z);
-	Gx = (int)a->y; 	
-	Gy = (int)a->x;	
-	Gz = (int)a->z;
+	*roll = Gy/Gz;
+	*pitch = -Gx/sqrt(Gy*Gy + Gz*Gz);
 }
+
 
 /*-----------------------------------------------------------------------------
  *  Function:     update_magnetomer_calib_data
@@ -1315,7 +1297,7 @@ void basicmagcalib(int *cBx, int *cBy, int *cBz)
   	  	  	  	 psi = atan2f((Bz.*sinf(phi)-By.*cosf(phi)),(Bx.*cosf(theta)+By.*sinf(theta).*sinf(phi)+Bz.*sinf(theta).*cosf(phi)));
  *  Return:      none
  -----------------------------------------------------------------------------*/
-void fusion6(int Gx, int Gy, int Gz, int Bx, int By, int Bz, float *Roll, float *Pitch, float *Yaw)
+void fusion6(float Gx, float Gy, float Gz, int Bx, int By, int Bz, float *Roll, float *Pitch, float *Yaw)
 {
 	float By2, Bz2, Gz2, Bx3; //Bz3;
 	float sphi, cphi, stheta, ctheta;
@@ -1376,87 +1358,6 @@ void Get_Lsm_Data()
 
 }
 
-
-/*-----------------------------------------------------------------------------
- *  Function:     Read_Acc_Calib_values_from_Sd_Card
- *  Brief:        Reads acc values from Sd Card
- *  Parameter:    none
- *  Return:       none
- -----------------------------------------------------------------------------*/
-uint8_t Read_Acc_Calib_values_from_Sd_Card()
-{
-	_mqx_int error_code;
-	MQX_FILE_PTR fd_ptr;
-	char Acc_Filename[30];
-	char acc_string[100];
-	char *temp_str;
-
-	// sprintf(filename,"");
-	error_code = ioctl(filesystem_handle, IO_IOCTL_CHANGE_CURRENT_DIR, (uint_32_ptr) "a:\\");
-	if(error_code==MQX_OK)
-		printf("\nCHANGED DIRECTORY TO a:\\");
-	else
-		printf("\nCHANGE DIRECTORY FAILED\n");
-
-	memset(Acc_Filename,0x00,30);
-	strcpy(Acc_Filename,"a:"); 
-	strcat(Acc_Filename,Serial_Numbr);
-	strcat(Acc_Filename,"_ACC_Values.txt");
-	// printf("\n\n %s", Acc_Filename);
-	fd_ptr = fopen(Acc_Filename, "r");
-	if (fd_ptr == NULL)
-	{
-		printf("\n ACC CALIB VALUE FILE NOT PRESENT!!! \n");
-		return 0;
-	}
-
-
-	// fseek(fd_ptr, strlen(acc_string)+1, IO_SEEK_SET);
-
-	fgets(acc_string,sizeof(acc_string),fd_ptr); /* read a line from a file */
-	if(strlen(acc_string)<2)
-		fgets(acc_string,sizeof(acc_string),fd_ptr); /* read a line from a file */
-	printf("\nSecond Row is %s\n",acc_string); //print the file contents on stdout.
-	ACC_Data.data.ACC11 = strtod(acc_string, &temp_str);
-	ACC_Data.data.ACC21 = strtod(temp_str,&temp_str);
-	ACC_Data.data.ACC31 = strtod(temp_str,NULL);
-	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC11, ACC_Data.data.ACC21, ACC_Data.data.ACC31);
-
-	fgets(acc_string,sizeof(acc_string),fd_ptr); /* read a line from a file */
-	if(strlen(acc_string)<2)
-	{
-		fgets(acc_string,sizeof(acc_string),fd_ptr); /* read a line from a file */
-	}
-	printf("\nThird Row is %s\n",acc_string); //print the file contents on stdout.
-	ACC_Data.data.ACC12 = strtod(acc_string, &temp_str);
-	ACC_Data.data.ACC22 = strtod(temp_str,&temp_str);
-	ACC_Data.data.ACC32 = strtod(temp_str,NULL);
-	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC12, ACC_Data.data.ACC22, ACC_Data.data.ACC32);
-
-	fgets(acc_string,sizeof(acc_string),fd_ptr); /* read a line from a file */
-	if(strlen(acc_string)<2)
-		fgets(acc_string,sizeof(acc_string),fd_ptr); /* read a line from a file */
-		printf("\n Fourth Row is %s\n",acc_string); //print the file contents on stdout.
-		ACC_Data.data.ACC13 = strtod(acc_string, &temp_str);
-		ACC_Data.data.ACC23 = strtod(temp_str,&temp_str);
-		ACC_Data.data.ACC33 = strtod(temp_str,NULL);
-		printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC13, ACC_Data.data.ACC23, ACC_Data.data.ACC33);
-		
-	fgets(acc_string,sizeof(acc_string),fd_ptr); // read a line from a file 
-	if(strlen(acc_string)<2)
-		fgets(acc_string,sizeof(acc_string),fd_ptr); /* read a line from a file */
-	printf("\nFirst Row is %s\n",acc_string); //print the file contents on stdout.
-	ACC_Data.data.ACC10 = strtod(acc_string, &temp_str);
-	ACC_Data.data.ACC20 = strtod(temp_str, &temp_str);
-	ACC_Data.data.ACC30 = strtod(temp_str,NULL);
-	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC10, ACC_Data.data.ACC20, ACC_Data.data.ACC30);
-		
-	fclose(fd_ptr);
-	Write_Acc_Calib_Dat();
-	//Read_Acc_Calib_Dat();
-	return 1;
-
-}
 /*-----------------------------------------------------------------------------
  *************************        END        **********************************
  -----------------------------------------------------------------------------*/
