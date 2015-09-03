@@ -49,11 +49,12 @@ uchar Lsm_enable_Test_commands[] = { 0x97, 0x00 };
 uchar Lsm_disable_commands[] = { 0x00, 0x03 };
 char Slope_Measurment_Result_Aspect[4];
 int_16 Slope_Measurment_Result_Slope_Angle = 0;
-int32_t Acc_Calib_Data1[6][4];
+double Acc_Calib_Data1[6][4];
 
 uint8_t Acc_Calib_Read_Ctr[6];
-int_16 Ax, Ay, Az, Mx, My, Mz;
-
+int_16 Mx, My, Mz;
+int_16 Ax_raw, Ay_raw, Az_raw;
+float Ax, Ay, Az;
 
 ACC_Values ACC_Data;
 
@@ -101,8 +102,10 @@ uint8_t Magnetometer_Calib_process=1;
 
 void get_euler_angles(float *roll, float *pitch)
 {
-	*roll = Gy/Gz;
-	*pitch = -Gx/sqrt(Gy*Gy + Gz*Gz);
+	printf("Gx=%f, Gy=%f, Gz=%f", Gx, Gy, Gz);
+	*roll = (Gy/Gz) * RAD_TO_DEG;
+	*pitch = (-Gx/sqrt(Gy*Gy + Gz*Gz)) * RAD_TO_DEG;
+	
 }
 
 
@@ -744,18 +747,19 @@ void read_accelerometer_data(void)
 	lsm303_i2c_read_polled(Lsm303_fd, OUT_Y_H_A, &Lsm303_data_buffer[3], 1, 0);
 	lsm303_i2c_read_polled(Lsm303_fd, OUT_Z_L_A, &Lsm303_data_buffer[4], 1, 0);
 	lsm303_i2c_read_polled(Lsm303_fd, OUT_Z_H_A, &Lsm303_data_buffer[5], 1, 0);
-	Ax = (int_16) ((uint_16) Lsm303_data_buffer[1] << 8) + (uint_16) Lsm303_data_buffer[0];
-	Ay = (int_16) ((uint_16) Lsm303_data_buffer[3] << 8) + (uint_16) Lsm303_data_buffer[2];
-	Az = (int_16) ((uint_16) Lsm303_data_buffer[5] << 8) + (uint_16) Lsm303_data_buffer[4];
-	Ax /= ACCELEROMETER_GAIN;
-	Ay /= ACCELEROMETER_GAIN;
-	Az /= ACCELEROMETER_GAIN;
-
+	Ax_raw = (int_16) ((uint_16) Lsm303_data_buffer[1] << 8) + (uint_16) Lsm303_data_buffer[0];
+	Ay_raw = (int_16) ((uint_16) Lsm303_data_buffer[3] << 8) + (uint_16) Lsm303_data_buffer[2];
+	Az_raw = (int_16) ((uint_16) Lsm303_data_buffer[5] << 8) + (uint_16) Lsm303_data_buffer[4];
+	
 #if ENABLE_LSM303DLHC
-	Ax = (Ax >> 4);
-	Ay = (Ay >> 4);
-	Az = (Az >> 4);
+	Ax_raw = (Ax_raw >> 4);
+	Ay_raw = (Ay_raw >> 4);
+	Az_raw = (Az_raw >> 4);
 #endif
+	
+	Ax =  (float)Ax_raw/ACCELEROMETER_GAIN;
+	Ay =  (float)Ay_raw/ACCELEROMETER_GAIN;
+	Az =  (float)Az_raw/ACCELEROMETER_GAIN;
 
 }
 

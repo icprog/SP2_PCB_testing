@@ -88,7 +88,9 @@ CalibTable Magnetometer_Calib_Table[] = {
 void transform_raw_acc(void)
 {
 	double ax,ay,az;
-
+	read_accelerometer_data();
+	
+	printf("Ax=%d, Ay=%d, Az=%d", Ax, Ay, Az);
 	ax = (double) Ax / ACCELEROMETER_GAIN;
 	ay = (double) Ay / ACCELEROMETER_GAIN;
 	az = (double) Az / ACCELEROMETER_GAIN;
@@ -96,7 +98,6 @@ void transform_raw_acc(void)
 	Gx = (float) ((ACC_Data.data.ACC00*ax)+(ACC_Data.data.ACC10*ay)+(ACC_Data.data.ACC20*az)+ACC_Data.data.ACC30);
 	Gy = (float) ((ACC_Data.data.ACC01*ax)+(ACC_Data.data.ACC11*ay)+(ACC_Data.data.ACC21*az)+ACC_Data.data.ACC31);
 	Gz = (float) ((ACC_Data.data.ACC02*ax)+(ACC_Data.data.ACC12*ay)+(ACC_Data.data.ACC22*az)+ACC_Data.data.ACC32);
-	
 	
 }
 void acc_transform_wrapper(void)
@@ -464,6 +465,7 @@ uint_8 calibrate_Accelerometer2(void)
 	}
 	
 	slope = angle_sum/sample_count;
+	printf("sum= %f, count=%d, avg=&f", angle_sum, sample_count, slope);
 	if((slope >= Accelerometer_Calib_Table[Accelerometer_Condition_selection].min_voltage) && 
 			(slope <= Accelerometer_Calib_Table[Accelerometer_Condition_selection].max_voltage))
 	{

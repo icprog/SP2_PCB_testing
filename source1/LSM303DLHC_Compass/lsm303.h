@@ -323,7 +323,8 @@ extern void Get_Sample_average_LSM_results(int_16 *, char *, uint_16 *);
 extern int Bx,By,Bz, final_yaw, final_roll;
 extern float Roll,Pitch,Yaw;
 extern float Gx, Gy, Gz;
-extern int_16 Ax, Ay, Az;
+extern int_16 Ax_raw, Ay_raw, Az_raw;
+extern float Ax, Ay, Az;
 
 extern uint8_t calib_count;
 extern uint8_t Magnetometer_Calib_process;

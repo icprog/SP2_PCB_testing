@@ -206,6 +206,7 @@ ui_screen_update(void)
 				{
 					lsm303_i2c0_init();
 					Start_LSM();
+					Read_Acc_Calib_Dat();
 					ui_timer_start(CAL_REFRESH_TIME);
 				}
 				else if(State_of_Screen == UI_ACCELEROMETER_CALIBRATION_SCREEN_DOWN)
@@ -894,13 +895,15 @@ ui_screen_update(void)
 		}		
 		else if(State_of_Screen == UI_CALIBRATION_ACCELEROMETER)
 		{
-			if(get_slope_measurement(&tempAngle, aspect, &magnetic_heading) == 0)
-			{
-				Angle_result = Angle_result + tempAngle;
-				Count_angle++;
-				//					sprintf(tempString, "%d°", tempAngle);
-				//					printf("\nSlope Angle = %d°",tempAngle);
-			}
+
+			float roll, pitch;
+			transform_raw_acc();
+			get_euler_angles(&roll, &pitch);
+			printf("roll= %f pitch = %f \n", roll, pitch);
+			tempAngle = (int_16)pitch;
+			Angle_result = Angle_result + tempAngle;
+			Count_angle++;
+
 		}
 		break;		
 

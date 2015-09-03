@@ -715,6 +715,7 @@ static void Create_ROS_Menu_Content(void)
 static void Create_AccelerometerMenu_Content(void)
 {
 
+	float roll, pitch;
 	char  	tempString[16];
 	char 	aspect[4];
 	uint_16 magnetic_heading = 0xffff;
@@ -752,8 +753,12 @@ static void Create_AccelerometerMenu_Content(void)
 		Count_angle = 0;
 		Angle_result = 0;
 	}
-	else if(get_slope_measurement(&tempAngle, aspect, &magnetic_heading) == 0)
+	else
 	{
+		transform_raw_acc();
+		get_euler_angles(&roll, &pitch);
+		printf("roll= %f pitch = %f \n", roll, pitch);
+		tempAngle = (int_16)pitch;
 		sprintf(tempString, "%d°", tempAngle);
 		printf("\nSlope Angle = %d°",tempAngle);
 	}

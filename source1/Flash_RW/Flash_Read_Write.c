@@ -420,7 +420,7 @@ uint8_t Read_Acc_Calib_Dat()
 	if (flash_file == NULL) 
 	{
 		printf("\nUnable to open file %s", FLASH_NAME);
-		return 0;
+		return 1;
 	}
 	else 
 	{
@@ -445,9 +445,8 @@ uint8_t Read_Acc_Calib_Dat()
 	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC10, ACC_Data.data.ACC11, ACC_Data.data.ACC12);
 	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC20, ACC_Data.data.ACC21, ACC_Data.data.ACC22);
 	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC30, ACC_Data.data.ACC31, ACC_Data.data.ACC32);
-				
 	
-	return 1;
+	return 0;
 }
 
 
