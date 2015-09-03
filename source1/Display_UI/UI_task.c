@@ -202,11 +202,6 @@ ui_screen_update(void)
 					ADC_Init();
 					ui_timer_start(CAL_REFRESH_TIME);
 				}
-				else if(State_of_Screen == MATRIX_TEST)
-				{
-					printf("matrix ui menu item selected \n");
-					matrix_test();
-				}
 				else if ( (State_of_Screen == UI_CALIBRATION_ACCELEROMETER))
 					//						|| (State_of_Screen == UI_CALIBRATION_MAGNETOMETER))
 				{
@@ -809,20 +804,15 @@ ui_screen_update(void)
 				accelerometer_calibration_screen = ACC_CALIBRATION_ACC_SCREEN_DOWN;
 				Calib_Acc_Avg();
 				
-//				Stop_PDB_Timer();
-				Write_Calib_Acc_Dat();
-//				Start_PDB_Timer();
+				//calibrate the accelerometer with the values collected
+				Write_Calib_Acc_Dat(); //write the w matrix
+				acc_transform_wrapper();
 				
 				Lsm303_deinit();
 				Stop_LSM();		
 				State_of_Screen = UI_CALIBRATION_MENU;
 				display_Mainmenu();
 				
-//				State_of_Screen = UI_CALIBRATION_ACCELEROMETER;
-//				lsm303_i2c0_init();
-//				Start_LSM();
-//				ui_timer_start(CAL_REFRESH_TIME);
-//				display_Accelerometer_Calibration();
 
 			default:
 				break;
@@ -1365,6 +1355,33 @@ ui_screen_update(void)
 
 	case MATRIX_TEST:
 		matrix_test();
+		
+	
+//		w.mat[0][0] = -8700;
+//		w.mat[0][1] = -192;
+//		w.mat[0][2] = -28079;
+//		w.mat[0][3] = 1;
+//		w.mat[1][0] = 8103;
+//		w.mat[1][1] = -1953;
+//		w.mat[1][2] = 30355;
+//		w.mat[1][3] = 1;
+//		w.mat[2][0] = 27282;
+//		w.mat[2][1] = -1000;
+//		w.mat[2][2] = -8648;
+//		w.mat[2][3] = 1;
+//		w.mat[3][0] = -27502;
+//		w.mat[3][1] = 1663;
+//		w.mat[3][2] = 7415;
+//		w.mat[3][3] = 1;
+//		w.mat[4][0] = -846;
+//		w.mat[4][1] = 27803;
+//		w.mat[4][2] = 2635;
+//		w.mat[4][3] = 1;
+//		w.mat[5][0] = 390;
+//		w.mat[5][1] = -27699;
+//		w.mat[5][2] = -4107;
+//		w.mat[5][3] = 1;
+		
 		State_of_Screen = UI_CALIBRATION_MENU;
 		
 		break;

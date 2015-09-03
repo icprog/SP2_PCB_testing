@@ -6,6 +6,7 @@
  */
 
 #include "common_headers.h"
+#include "matrix_operations.h"
 
 extern void Write_IRDMS_Data(void);
 extern void Write_Pressure_Data(void);
@@ -83,6 +84,151 @@ CalibTable Magnetometer_Calib_Table[] = {
 
 };
 
+
+void transform_raw_acc(void)
+{
+	double ax,ay,az;
+
+	ax = (double) Ax / ACCELEROMETER_GAIN;
+	ay = (double) Ay / ACCELEROMETER_GAIN;
+	az = (double) Az / ACCELEROMETER_GAIN;
+//	printf("\n Before %d,%d,%d",Ax,Ay,Az);
+	a->y = (float) ((ACC_Data.data.ACC11*ax)+(ACC_Data.data.ACC12*ay)+(ACC_Data.data.ACC13*az)+ACC_Data.data.ACC10);
+	a->x = (float) ((ACC_Data.data.ACC00*ax)+(ACC_Data.data.ACC22*ay)+(ACC_Data.data.ACC23*az)+ACC_Data.data.ACC20);
+	a->z = (float) ((ACC_Data.data.ACC31*ax)+(ACC_Data.data.ACC32*ay)+(ACC_Data.data.ACC33*az)+ACC_Data.data.ACC30);
+//	printf("\n Before %f,%f,%f\n\r",a->x,a->y,a->z);
+	Gx = (int)a->y; 	
+	Gy = (int)a->x;	
+	Gz = (int)a->z;
+}
+void acc_transform_wrapper(void)
+{
+	printf("acc_tranform_wrapper \n");
+	//generate w matrix from saved accel values
+	struct matrix_struct w;
+	w.m = 6;
+	w.n = 4;
+	for(int i = 0; i < w.m; i++)
+	{
+		for(int j = 0; j < w.n; j++)
+		{
+			w.mat[i][j] = (float)Acc_Calib1.Acc_Calib_Write_Buf[i][j];
+		}
+	}
+	//generate known Y matrix
+	struct matrix_struct Y;
+	Y.m = 6;
+	Y.n = 3;
+	Y.mat[0][0] = 0;
+	Y.mat[0][1] = 0;
+	Y.mat[0][2] = 1;
+	Y.mat[1][0] = 0;
+	Y.mat[1][1] = 0;
+	Y.mat[1][2] = -1;
+	Y.mat[2][0] = 0;
+	Y.mat[2][1] = 1;
+	Y.mat[2][2] = 0;
+	Y.mat[3][0] = 0;
+	Y.mat[3][1] = -1;
+	Y.mat[3][2] = 0;
+	Y.mat[4][0] = 1;
+	Y.mat[4][1] = 0;
+	Y.mat[4][2] = 0;
+	Y.mat[5][0] = -1;
+	Y.mat[5][1] = 0;
+	Y.mat[5][2] = 0;
+	
+	struct matrix_struct acc_transform_matrix;
+	calculate_acc_transform(&w, &Y, &acc_transform_matrix);
+	
+	//populate the ACC data structure //TODO this structure is a bit bulky
+	ACC_Data.data.ACC00 = X.acc_transform_matrix[0][0];
+	ACC_Data.data.ACC01 = X.acc_transform_matrix[0][1];
+	ACC_Data.data.ACC02 = X.acc_transform_matrix[0][2];
+	ACC_Data.data.ACC10 = X.acc_transform_matrix[1][0];
+	ACC_Data.data.ACC11 = X.acc_transform_matrix[1][1];
+	ACC_Data.data.ACC12 = X.acc_transform_matrix[1][2];
+	ACC_Data.data.ACC20 = X.acc_transform_matrix[2][0];
+	ACC_Data.data.ACC21 = X.acc_transform_matrix[2][1];
+	ACC_Data.data.ACC22 = X.acc_transform_matrix[2][2];
+	ACC_Data.data.ACC30 = X.acc_transform_matrix[3][0];
+	ACC_Data.data.ACC31 = X.acc_transform_matrix[3][1];
+	ACC_Data.data.ACC32 = X.acc_transform_matrix[3][2];
+	
+	Write_Acc_Calib_Dat(); //write ACC values to flash
+	printf("accelration calibration complete \n");
+	
+}
+
+/*
+ * This function uses least squares to solve Y = w*X
+ * X = [w^T*w]^-1 *w^T*Y
+ */
+void calculate_acc_transform(struct matrix_struct * w, struct matrix_struct * Y, struct matrix_struct * X)
+{
+	X->m = 4;
+	X->n = 3;
+	printf("w: \n");
+	for(int i = 0; i < w->m; i++)
+	{
+		for(int j = 0; j < w->n; j++)
+		{
+			printf("%f ", w->mat[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+	struct matrix_struct wt;
+	transpose(w, &wt);	
+	printf("wt: \n");
+	for(int i = 0; i < wt.m; i++)
+	{
+		for(int j = 0; j < wt.n; j++)
+		{
+			printf("%f ", wt.mat[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+	struct matrix_struct wtw;
+	m_mult(&wt, w, &wtw);
+	printf("w^T * w: \n");
+	for(int i = 0; i < wtw.m; i++)
+	{
+		for(int j = 0; j < wtw.n; j++)
+		{
+			printf("%f ", wtw.mat[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+	struct matrix_struct inv_wtw;
+	inverse(&wtw, &inv_wtw);
+	printf("inv(w^T * w): \n");
+	for(int i = 0; i < inv_wtw.m; i++)
+	{
+		for(int j = 0; j < inv_wtw.n; j++)
+		{
+			printf("%20.12f ", inv_wtw.mat[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+	struct matrix_struct inv_wtw_wt;
+	m_mult(&inv_wtw, &wt, &inv_wtw_wt);
+	m_mult(&inv_wtw_wt, Y, X);
+	
+	printf("X matrix (ACC constants): \n");
+	for(int i = 0; i < X->m; i++)
+	{
+		for(int j = 0; j < X->n; j++)
+		{
+			printf("%f ", X->mat[i][j]);
+		}
+		printf("\n");
+	}
+	
+}
 
 /*-----------------------------------------------------------------------------
  *  Function:     calibrate_IRDMS
@@ -303,6 +449,7 @@ uint_8 calibrate_ROS_Sensors(void)
 	}
 	
 }
+
 
 
 /*-----------------------------------------------------------------------------

@@ -82,6 +82,7 @@ void Read_calib_data(const char file_name[32],CalibTable *Sensor_Calib_Table);
 
 uint_8 calibrate_IRDMS(void);
 uint_8 calibrate_Pressure_Sensor(void);
+void accel_cal_transform(void);
 
 extern void Add_Item_To_Menu(const char *menu_Text, uint_8 menu_position,
 		uint_16 menu_selection_status);

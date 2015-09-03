@@ -250,7 +250,7 @@ MD[1:0] Magnetic sensor mode selection. Default 10 Refer to Table 54
 #define I2C_DEVICE_POLLED    "i2c0:"
 #define I2C_DEVICE_INTERRUPT "ii2c0:"
 #define ENABLE_I2C_INTERRUPT  BSPCFG_ENABLE_II2C0
-#define ACCELROMETER_GAIN    (1000)
+#define ACCELEROMETER_GAIN    (1000)
 #define MAGNETOMETR_XY_GAIN  (1100)
 #define MAGNETOMETR_Z_GAIN   (980)
 #define DEG_TO_RAD           (0.0174532925)
@@ -269,9 +269,14 @@ typedef union
 }ACC_CALIB;
 extern ACC_CALIB Acc_Calib1;
 
+//typedef struct
+//{
+//	double ACC11 , ACC21 , ACC31 , ACC12, ACC22 , ACC32 ,ACC13 , ACC23 , ACC33 ,ACC10 , ACC20  , ACC30 ;
+//}ACC;
+
 typedef struct
 {
-	double ACC11 , ACC21 , ACC31 , ACC12, ACC22 , ACC32 ,ACC13 , ACC23 , ACC33 ,ACC10 , ACC20  , ACC30 ;
+	double ACC00 , ACC01  , ACC02, , ACC10 , ACC11 , ACC12 , ACC20 ,ACC21 , ACC22, ACC30, ACC31, ACC32 ;
 }ACC;
 
 typedef union

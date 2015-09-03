@@ -92,11 +92,14 @@ static int Bxmax = -MAGMAXINT, Bymax = -MAGMAXINT, Bzmax = -MAGMAXINT;
 static int Bxofs=0, Byofs=0, Bzofs=0; // offset: (max+min)/2
 static int Bxrange2=MAGRANGE, Byrange2=MAGRANGE, Bzrange2=MAGRANGE; // half range: (max-min)/2
 
-int Gx,Gy,Gz,Bx,By,Bz, final_yaw, final_roll;
+int Bx,By,Bz, final_yaw, final_roll;
 float Roll,Pitch,Yaw;
+float Gx, Gy, Gz;
 
 uint8_t calib_count =100;
 uint8_t Magnetometer_Calib_process=1;
+
+
 
 /*-----------------------------------------------------------------------------
  *  Function:     calibrate_acc_with_values
@@ -113,7 +116,7 @@ void calibrate_acc_with_calib_values(vector *a)
 	az = (double) Az / ACCELROMETER_GAIN;
 //	printf("\n Before %d,%d,%d",Ax,Ay,Az);
 	a->y = (float) ((ACC_Data.data.ACC11*ax)+(ACC_Data.data.ACC12*ay)+(ACC_Data.data.ACC13*az)+ACC_Data.data.ACC10);
-	a->x = (float) ((ACC_Data.data.ACC21*ax)+(ACC_Data.data.ACC22*ay)+(ACC_Data.data.ACC23*az)+ACC_Data.data.ACC20);
+	a->x = (float) ((ACC_Data.data.ACC00*ax)+(ACC_Data.data.ACC22*ay)+(ACC_Data.data.ACC23*az)+ACC_Data.data.ACC20);
 	a->z = (float) ((ACC_Data.data.ACC31*ax)+(ACC_Data.data.ACC32*ay)+(ACC_Data.data.ACC33*az)+ACC_Data.data.ACC30);
 //	printf("\n Before %f,%f,%f\n\r",a->x,a->y,a->z);
 	Gx = (int)a->y; 	
@@ -258,9 +261,9 @@ void calibrate_compass_acc(uint8_t Dev_Pos)
 		Lsm_Data_Ready = 0;
 		read_accelerometer_data();
 
-		Acc_Calib_Data1[Dev_Pos][0] += Gx;
-		Acc_Calib_Data1[Dev_Pos][1] += Gy;
-		Acc_Calib_Data1[Dev_Pos][2] += Gz;
+		Acc_Calib_Data1[Dev_Pos][0] += Ax;//add raw acceleromter values. 
+		Acc_Calib_Data1[Dev_Pos][1] += Ay;
+		Acc_Calib_Data1[Dev_Pos][2] += Az;
 		Acc_Calib_Read_Ctr[Dev_Pos] += 1;
 		Start_LSM();
 	}
@@ -306,6 +309,10 @@ void calib_file_check(void)
 		Calib_status[ACCELEROMETER_CALIB_2] = INCOMPLETE;
 	}
 }
+
+/*
+ * this wirtes the w matrix
+ */
 void Write_Calib_Acc_Dat()
 {
 	MQX_FILE_PTR Ser_fd_ptr; 
@@ -329,9 +336,8 @@ void Write_Calib_Acc_Dat()
 			fprintf(Ser_fd_ptr, "%d\r\n",Acc_Calib1.Acc_Calib_Write_Buf[Dev_Pos][3]);
 		}
 		Calib_status[ACCELEROMETER_CALIB_2] = COMPLETED;
-		fclose(Ser_fd_ptr);	
+		fclose(Ser_fd_ptr);
 	}
-//	Write_Acc_Calib_Dat();
 }
 
 /*-----------------------------------------------------------------------------
@@ -756,14 +762,17 @@ void read_accelerometer_data(void)
 	lsm303_i2c_read_polled(Lsm303_fd, OUT_Y_H_A, &Lsm303_data_buffer[3], 1, 0);
 	lsm303_i2c_read_polled(Lsm303_fd, OUT_Z_L_A, &Lsm303_data_buffer[4], 1, 0);
 	lsm303_i2c_read_polled(Lsm303_fd, OUT_Z_H_A, &Lsm303_data_buffer[5], 1, 0);
-	Gx = (int_16) ((uint_16) Lsm303_data_buffer[1] << 8) + (uint_16) Lsm303_data_buffer[0];
-	Gy = (int_16) ((uint_16) Lsm303_data_buffer[3] << 8) + (uint_16) Lsm303_data_buffer[2];
-	Gz = (int_16) ((uint_16) Lsm303_data_buffer[5] << 8) + (uint_16) Lsm303_data_buffer[4];
+	Ax = (int_16) ((uint_16) Lsm303_data_buffer[1] << 8) + (uint_16) Lsm303_data_buffer[0];
+	Ay = (int_16) ((uint_16) Lsm303_data_buffer[3] << 8) + (uint_16) Lsm303_data_buffer[2];
+	Az = (int_16) ((uint_16) Lsm303_data_buffer[5] << 8) + (uint_16) Lsm303_data_buffer[4];
+	Ax /= ACCELEROMETER_GAIN;
+	Ay /= ACCELEROMETER_GAIN;
+	Az /= ACCELEROMETER_GAIN;
 
 #if ENABLE_LSM303DLHC
-	Gx = (Gx >> 4);
-	Gy = (Gy >> 4);
-	Gz = (Gz >> 4);
+	Ax = (Ax >> 4);
+	Ay = (Ay >> 4);
+	Az = (Az >> 4);
 #endif
 
 }
