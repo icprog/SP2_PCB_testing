@@ -8,6 +8,7 @@
 #include "common_headers.h"
 #include "matrix_operations.h"
 
+
 extern void Write_IRDMS_Data(void);
 extern void Write_Pressure_Data(void);
 extern void Write_ROS_Data(void);
@@ -90,14 +91,16 @@ void transform_raw_acc(void)
 	double ax,ay,az;
 	read_accelerometer_data();
 	
-	printf("Ax=%d, Ay=%d, Az=%d", Ax, Ay, Az);
-	ax = (double) Ax / ACCELEROMETER_GAIN;
-	ay = (double) Ay / ACCELEROMETER_GAIN;
-	az = (double) Az / ACCELEROMETER_GAIN;
+	printf("Ax=%f, Ay=%f, Az=%f", Ax, Ay, Az);
+	ax = (double) Ax;
+	ay = (double) Ay;
+	az = (double) Az;
 
 	Gx = (float) ((ACC_Data.data.ACC00*ax)+(ACC_Data.data.ACC10*ay)+(ACC_Data.data.ACC20*az)+ACC_Data.data.ACC30);
 	Gy = (float) ((ACC_Data.data.ACC01*ax)+(ACC_Data.data.ACC11*ay)+(ACC_Data.data.ACC21*az)+ACC_Data.data.ACC31);
 	Gz = (float) ((ACC_Data.data.ACC02*ax)+(ACC_Data.data.ACC12*ay)+(ACC_Data.data.ACC22*az)+ACC_Data.data.ACC32);
+	
+	
 	
 }
 void acc_transform_wrapper(void)
@@ -215,6 +218,16 @@ void calculate_acc_transform(struct matrix_struct * w, struct matrix_struct * Y,
 	printf("\n");
 	struct matrix_struct inv_wtw_wt;
 	m_mult(&inv_wtw, &wt, &inv_wtw_wt);
+	printf("inv(w' * w)*w': \n");
+	for(int i = 0; i < inv_wtw_wt.m; i++)
+	{
+		for(int j = 0; j < inv_wtw_wt.n; j++)
+		{
+			printf("%20.12f ", inv_wtw_wt.mat[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
 	m_mult(&inv_wtw_wt, Y, X);
 	
 	printf("X matrix (ACC constants): \n");
@@ -222,7 +235,7 @@ void calculate_acc_transform(struct matrix_struct * w, struct matrix_struct * Y,
 	{
 		for(int j = 0; j < X->n; j++)
 		{
-			printf("%f ", X->mat[i][j]);
+			printf("%20.12f ", X->mat[i][j]);
 		}
 		printf("\n");
 	}

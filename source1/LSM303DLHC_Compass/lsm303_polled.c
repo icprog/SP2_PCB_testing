@@ -103,8 +103,26 @@ uint8_t Magnetometer_Calib_process=1;
 void get_euler_angles(float *roll, float *pitch)
 {
 	printf("Gx=%f, Gy=%f, Gz=%f", Gx, Gy, Gz);
-	*roll = (Gy/Gz) * RAD_TO_DEG;
-	*pitch = (-Gx/sqrt(Gy*Gy + Gz*Gz)) * RAD_TO_DEG;
+	Gx = Ax;
+	Gy = Ay;
+	Gz = Az;
+	
+	
+	float sphi, cphi, Gz2;
+	float phi, theta;
+
+	phi = atan2f(Gy,Gz);
+	sphi = sinf(phi);
+	cphi = cosf(phi);
+	Gz2 =  Gy*sphi + Gz*cphi;
+
+	if (Gz2!=0.0)
+		theta = atanf(-Gx / Gz2);
+	
+//	*roll = (Gy/Gz) * RAD_TO_DEG;
+//	*pitch = (-Gx/sqrt(Gy*Gy + Gz*Gz)) * RAD_TO_DEG;
+	*roll = phi * RAD_TO_DEG;
+	*pitch = theta * RAD_TO_DEG;
 	
 }
 
@@ -757,9 +775,10 @@ void read_accelerometer_data(void)
 	Az_raw = (Az_raw >> 4);
 #endif
 	
-	Ax =  (float)Ax_raw/ACCELEROMETER_GAIN;
-	Ay =  (float)Ay_raw/ACCELEROMETER_GAIN;
-	Az =  (float)Az_raw/ACCELEROMETER_GAIN;
+	Ax =  (float)Ax_raw;
+	Ay =  (float)Ay_raw;
+	Az =  (float)Az_raw;
+	printf("Ax=%f, Ay=%f, Az=%f \n", Ax, Ay, Az);
 
 }
 

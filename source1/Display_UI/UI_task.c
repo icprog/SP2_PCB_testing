@@ -206,6 +206,7 @@ ui_screen_update(void)
 				{
 					lsm303_i2c0_init();
 					Start_LSM();
+					
 					Read_Acc_Calib_Dat();
 					ui_timer_start(CAL_REFRESH_TIME);
 				}
