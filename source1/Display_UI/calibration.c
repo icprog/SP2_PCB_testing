@@ -6,7 +6,9 @@
  */
 
 #include "common_headers.h"
+#include "calibration.h"
 #include "matrix_operations.h"
+#include <math.h>
 
 
 extern void Write_IRDMS_Data(void);
@@ -85,7 +87,50 @@ CalibTable Magnetometer_Calib_Table[] = {
 
 };
 
+/*
+ * this function manually transforms the raw acceleration by -15 degrees to compensate 
+ * for the offset of the board and the pole. In this system, the positive yaxis point to left of the device looking at the screen
+ * the positive x axis point down the pole, and the positive z axis is pointing into the screen. 
+ */
+void transform_raw_acc_manual(void)
+{
+	float deg2rad = 3.14159/180;
+	float deg_shift = -13.5;
+	float rad_shift = deg_shift*deg2rad;
+	//get raw acc data
+	read_accelerometer_data();
+	printf("Ax=%f, Ay=%f, Az=%f", Ax, Ay, Az);
+	struct matrix_struct x;
+	x.m = 3;
+	x.n = 1;
+	x.mat[0][0] = Ax;
+	x.mat[1][0] = Ay;
+	x.mat[2][0] = Az;
+	
+	//create a rotation matrix to rotate around y axis byy 15 degrees to account for the PCB offset to the pole
+	struct matrix_struct R;
+	R.m = 3;
+	R.n = 3;
+	R.mat[0][0] = cosf(rad_shift);
+	R.mat[0][1] = 0;
+	R.mat[0][2] = -sinf(rad_shift);
+	R.mat[1][0] = 0;
+	R.mat[1][1] = 1;
+	R.mat[1][2] = 0;
+	R.mat[2][0] = sin(rad_shift);
+	R.mat[2][1] = 0;
+	R.mat[2][2] = cosf(rad_shift);
+	
+	struct matrix_struct x_prime;
+	
+	m_mult(&R, &x, &x_prime);
+	Gx = x_prime.mat[0][0];
+	Gy = x_prime.mat[1][0];
+	Gz = x_prime.mat[2][0];
+	
 
+
+}
 void transform_raw_acc(void)
 {
 	double ax,ay,az;
@@ -99,13 +144,11 @@ void transform_raw_acc(void)
 	Gx = (float) ((ACC_Data.data.ACC00*ax)+(ACC_Data.data.ACC10*ay)+(ACC_Data.data.ACC20*az)+ACC_Data.data.ACC30);
 	Gy = (float) ((ACC_Data.data.ACC01*ax)+(ACC_Data.data.ACC11*ay)+(ACC_Data.data.ACC21*az)+ACC_Data.data.ACC31);
 	Gz = (float) ((ACC_Data.data.ACC02*ax)+(ACC_Data.data.ACC12*ay)+(ACC_Data.data.ACC22*az)+ACC_Data.data.ACC32);
-	
-	
-	
 }
 void acc_transform_wrapper(void)
 {
 	printf("acc_tranform_wrapper \n");
+	float row_sq_sums[3] = {0, 0, 0};
 	//generate w matrix from saved accel values
 	struct matrix_struct w;
 	w.m = 6;
@@ -115,29 +158,46 @@ void acc_transform_wrapper(void)
 		for(int j = 0; j < w.n; j++)
 		{
 			w.mat[i][j] = (float)Acc_Calib1.Acc_Calib_Write_Buf[i][j];
+			row_sq_sums[i] += w.mat[i][j]*w.mat[i][j];
 		}
 	}
+	
+//	//normalize w matrix
+//	for(int i = 0; i < w.m; i++)
+//	{
+//		for(int j = 0; j < w.n; j++)
+//		{
+//			w.mat[i][j] = w.mat[i][j]/sqrt(row_sq_sums[i]);
+//		}
+//	}
+	
 	//generate known Y matrix
 	struct matrix_struct Y;
 	Y.m = 6;
 	Y.n = 3;
+	//screen down = -z
 	Y.mat[0][0] = 0;
 	Y.mat[0][1] = 0;
-	Y.mat[0][2] = 1;
+	Y.mat[0][2] = -1;
+	//screen up = +z
 	Y.mat[1][0] = 0;
 	Y.mat[1][1] = 0;
-	Y.mat[1][2] = -1;
-	Y.mat[2][0] = 0;
-	Y.mat[2][1] = 1;
+	Y.mat[1][2] = 1;
+	//tip down = +x
+	Y.mat[2][0] = 1;
+	Y.mat[2][1] = 0;
 	Y.mat[2][2] = 0;
-	Y.mat[3][0] = 0;
-	Y.mat[3][1] = -1;
+	//tip up = -x
+	Y.mat[3][0] = -1;
+	Y.mat[3][1] = 0;
 	Y.mat[3][2] = 0;
-	Y.mat[4][0] = 1;
-	Y.mat[4][1] = 0;
+	//screen in = +y
+	Y.mat[4][0] = 0;
+	Y.mat[4][1] = 1;
 	Y.mat[4][2] = 0;
-	Y.mat[5][0] = -1;
-	Y.mat[5][1] = 0;
+	//screen out = -y
+	Y.mat[5][0] = 0;
+	Y.mat[5][1] = -1;
 	Y.mat[5][2] = 0;
 	
 	struct matrix_struct acc_transform_matrix;

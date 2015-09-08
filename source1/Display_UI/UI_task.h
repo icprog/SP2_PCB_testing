@@ -86,8 +86,8 @@ MATRIX_TEST
 #define 	PRESSURE			(1)
 #define 	ACCELEROMETER		(2)
 #define 	MAGNETOMETER		(3)
-#define 	ROS					(4)
-#define 	GPS					(5)
+#define 	ROS					(3)
+#define 	GPS					(4)
 
 #define 	IRDMS_CALIB 		(0)
 #define 	PRESSURE_CALIB		(1)

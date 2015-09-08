@@ -16,9 +16,13 @@
 #define NUM_OF_ACC_CONDITION	(4)
 #define NUM_OF_MAG_CONDITION	(4)
 
+#define DEG_TO_RAD           (0.0174532925)
+#define RAD_TO_DEG           (57.2957795)
+
 
 void calculate_acc_transform(struct matrix_struct * w, struct matrix_struct * Y, struct matrix_struct *X );
 void acc_transform_wrapper(void);
 void transform_raw_acc(void);
+void transform_raw_acc_manual(void);
 
 #endif /* CALIB_H_ */

@@ -103,9 +103,9 @@ uint8_t Magnetometer_Calib_process=1;
 void get_euler_angles(float *roll, float *pitch)
 {
 	printf("Gx=%f, Gy=%f, Gz=%f", Gx, Gy, Gz);
-	Gx = Ax;
-	Gy = Ay;
-	Gz = Az;
+//	Gx = Ax;
+//	Gy = Ay;
+//	Gz = Az;
 	
 	
 	float sphi, cphi, Gz2;
@@ -119,10 +119,10 @@ void get_euler_angles(float *roll, float *pitch)
 	if (Gz2!=0.0)
 		theta = atanf(-Gx / Gz2);
 	
-//	*roll = (Gy/Gz) * RAD_TO_DEG;
-//	*pitch = (-Gx/sqrt(Gy*Gy + Gz*Gz)) * RAD_TO_DEG;
-	*roll = phi * RAD_TO_DEG;
-	*pitch = theta * RAD_TO_DEG;
+	*roll = atan2f(Gy, Gz) * RAD_TO_DEG;
+	*pitch = atan2f(-Gx, sqrt(Gy*Gy + Gz*Gz)) * RAD_TO_DEG;
+//	*roll = phi * RAD_TO_DEG;
+//	*pitch = theta * RAD_TO_DEG;
 	
 }
 

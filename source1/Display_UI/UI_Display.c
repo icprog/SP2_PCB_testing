@@ -206,15 +206,15 @@ MenuTableEntry Mainmenu_Table[] = {
 		//   Num,   display_name,       	function,                     state	
 		{ 0, "IRDMS",      			display_IRDMS_Calibration,          	UI_CALIBRATION_IRDMS 			}, 
 		{ 1, "PRESSURE SENSOR", 	display_Pressure_sensor_Calibration, 	UI_CALIBRATION_PRESSURE 		}, 
-		{ 2, "ACCELEROMETER 1",    	display_Collect_Accelerometer_Calibration_Data,   	UI_ACCELEROMETER_CALIBRATION_SCREEN_DOWN}, 
-		{ 3, "ACCELEROMETER 2",    	display_Accelerometer_Calibration,   	UI_CALIBRATION_ACCELEROMETER 	}, 
+		{ 2, "ACCELEROMETER",    	display_Collect_Accelerometer_Calibration_Data,   	UI_ACCELEROMETER_CALIBRATION_SCREEN_DOWN}, 
+//		{ 3, "ACCELEROMETER 2",    	display_Accelerometer_Calibration,   	UI_CALIBRATION_ACCELEROMETER 	}, 
 //		{ 3, "MAGNETOMETER",      	display_Magnetometer_Calibration,  		UI_CALIBRATION_MAGNETOMETER		}, 
 //		{ 4, "MAGNETOMETER",	    display_compass_calibration_screen,  	UI_COMPASS_CALIBRATION			}, 	
-		{ 4, "ROS", 				display_ROS_Calibration ,        		UI_CALIBRATION_ROS 		    	}, 
-		{ 5, "GPS", 				display_GPS_Calibration,    			UI_CALIBRATION_GPS 				}, 
-		{ 6, "MATRIX TEST", 		matrix_test,    						MATRIX_TEST	},
+		{ 3, "ROS", 				display_ROS_Calibration ,        		UI_CALIBRATION_ROS 		    	}, 
+		{ 4, "GPS", 				display_GPS_Calibration,    			UI_CALIBRATION_GPS 				}, 
+//		{ 5, "MATRIX TEST", 		matrix_test,    						MATRIX_TEST	},
 
-#define NUM_OF_MAINMENU_ITEM 7
+#define NUM_OF_MAINMENU_ITEM 5
 
 };
 
@@ -755,7 +755,8 @@ static void Create_AccelerometerMenu_Content(void)
 	}
 	else
 	{
-		transform_raw_acc();
+//		transform_raw_acc();
+		transform_raw_acc_manual();
 		get_euler_angles(&roll, &pitch);
 		printf("roll= %f pitch = %f \n", roll, pitch);
 		tempAngle = (int_16)pitch;

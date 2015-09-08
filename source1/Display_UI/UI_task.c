@@ -801,10 +801,16 @@ ui_screen_update(void)
 				Write_Calib_Acc_Dat(); //write the w matrix
 				acc_transform_wrapper();
 				
-				Lsm303_deinit();
-				Stop_LSM();		
-				State_of_Screen = UI_CALIBRATION_MENU;
-				display_Mainmenu();
+//				Lsm303_deinit();
+//				Stop_LSM();		
+//				State_of_Screen = UI_CALIBRATION_MENU;
+//				display_Mainmenu();
+				
+				State_of_Screen = UI_CALIBRATION_ACCELEROMETER;
+				lsm303_i2c0_init();
+				Start_LSM();
+				Read_Acc_Calib_Dat();
+				ui_timer_start(CAL_REFRESH_TIME);
 				
 
 			default:
@@ -898,7 +904,8 @@ ui_screen_update(void)
 		{
 
 			float roll, pitch;
-			transform_raw_acc();
+//			transform_raw_acc();
+			transform_raw_acc_manual();
 			get_euler_angles(&roll, &pitch);
 			printf("roll= %f pitch = %f \n", roll, pitch);
 			tempAngle = (int_16)pitch;
@@ -907,7 +914,7 @@ ui_screen_update(void)
 
 		}
 		break;		
-
+		
 	case UI_CALIBRATION_MAGNETOMETER:
 
 		if (Button_Press_Status != BUTTON_PRESS_NOT_PENDING)
