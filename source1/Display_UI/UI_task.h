@@ -91,11 +91,10 @@ MATRIX_TEST
 
 #define 	IRDMS_CALIB 		(0)
 #define 	PRESSURE_CALIB		(1)
-#define 	ACCELEROMETER_CALIB_2 (2)
-#define 	ACCELEROMETER_CALIB	(3)
-#define 	MAGNETOMETER_CALIB	(7)
-#define 	ROS_CALIB			(4)
-#define 	GPS_CALIB			(6)
+#define 	ACCELEROMETER_CALIB	(2)
+#define 	ROS_CALIB			(3)
+#define 	GPS_CALIB			(4)
+#define 	MAGNETOMETER_CALIB	(5)
 
 
 #define 	INCOMPLETE		(0)

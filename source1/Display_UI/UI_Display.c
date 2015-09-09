@@ -96,7 +96,7 @@ void Battery_checkon_powerup(void);
 void Enable_all_sensors(void);
 void Disable_all_sensors(void);
 
-uint_8 Calib_status[6] ={0};
+uint_8 Calib_status[6] ={0,0,0,0,0,0};
 
 unsigned char Test_disp_ctr=0;
 
@@ -206,8 +206,8 @@ MenuTableEntry Mainmenu_Table[] = {
 		//   Num,   display_name,       	function,                     state	
 		{ 0, "IRDMS",      			display_IRDMS_Calibration,          	UI_CALIBRATION_IRDMS 			}, 
 		{ 1, "PRESSURE SENSOR", 	display_Pressure_sensor_Calibration, 	UI_CALIBRATION_PRESSURE 		}, 
-		{ 2, "ACCELEROMETER",    	display_Collect_Accelerometer_Calibration_Data,   	UI_ACCELEROMETER_CALIBRATION_SCREEN_DOWN}, 
-//		{ 3, "ACCELEROMETER 2",    	display_Accelerometer_Calibration,   	UI_CALIBRATION_ACCELEROMETER 	}, 
+//		{ 2, "ACCELEROMETER",    	display_Collect_Accelerometer_Calibration_Data,   	UI_ACCELEROMETER_CALIBRATION_SCREEN_DOWN}, 
+		{ 2, "ACCELEROMETER",    	display_Accelerometer_Calibration,   	UI_CALIBRATION_ACCELEROMETER 	}, 
 //		{ 3, "MAGNETOMETER",      	display_Magnetometer_Calibration,  		UI_CALIBRATION_MAGNETOMETER		}, 
 //		{ 4, "MAGNETOMETER",	    display_compass_calibration_screen,  	UI_COMPASS_CALIBRATION			}, 	
 		{ 3, "ROS", 				display_ROS_Calibration ,        		UI_CALIBRATION_ROS 		    	}, 

@@ -291,28 +291,6 @@ void Calib_Acc_Avg()
 	}
 }
 
-void calib_file_check(void)
-{
-	MQX_FILE_PTR Ser_fd_ptr; 
-	char Ser_File_Name[60];
-
-	memset(Ser_File_Name,0x00,60);
-	strcpy(Ser_File_Name,"a:");	
-	strcat(Ser_File_Name,Serial_Numbr);
-	strcat(Ser_File_Name,"_Compass_Acc_Calib.txt");
-	
-	Ser_fd_ptr = fopen(Ser_File_Name, "r");
-	if (Ser_fd_ptr != NULL)
-	{
-		Calib_status[ACCELEROMETER_CALIB_2] = COMPLETED;
-		fclose(Ser_fd_ptr);
-	}
-	else
-	{
-		Calib_status[ACCELEROMETER_CALIB_2] = INCOMPLETE;
-	}
-}
-
 /*
  * this wirtes the w matrix
  */
@@ -338,7 +316,6 @@ void Write_Calib_Acc_Dat()
 			fprintf(Ser_fd_ptr, "%d\t",Acc_Calib1.Acc_Calib_Write_Buf[Dev_Pos][2]);
 			fprintf(Ser_fd_ptr, "%d\r\n",Acc_Calib1.Acc_Calib_Write_Buf[Dev_Pos][3]);
 		}
-		Calib_status[ACCELEROMETER_CALIB_2] = COMPLETED;
 		fclose(Ser_fd_ptr);
 	}
 }

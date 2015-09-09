@@ -424,8 +424,7 @@ void Change_Defualt_Gragh_View(void);
 extern void Create_Snow_Profiles_File_List_Content(void);
 extern uint_8 tempCount;
 extern unsigned char Test_disp_ctr;
-extern void Add_Item_To_Menu(const char *menu_Text, uint_8 menu_position,
-		uint_16 menu_selection_status);
+extern void Add_Item_To_Menu(const char *menu_Text, uint_8 menu_position,uint_16 menu_selection_status);
 extern void Update_Fav_List_File_Index_After_File_Deletion(void);
 
 void display_bluetooth_toggle(void);

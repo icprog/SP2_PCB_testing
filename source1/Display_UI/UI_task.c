@@ -162,7 +162,6 @@ void UI_Task(uint_32 )
 	memset(Calib_status,0x00,7);
 	memset(mag_temp_heading_buff,0x00,200);
 	Update_Calib_Buff();
-	calib_file_check();
 	State_of_Screen = UI_CALIBRATION_MENU;
 	display_Mainmenu();
 
@@ -201,18 +200,16 @@ ui_screen_update(void)
 					ADC_Init();
 					ui_timer_start(CAL_REFRESH_TIME);
 				}
-				else if ( (State_of_Screen == UI_CALIBRATION_ACCELEROMETER))
-					//						|| (State_of_Screen == UI_CALIBRATION_MAGNETOMETER))
+				else if (State_of_Screen == UI_ACCELEROMETER_CALIBRATION_SCREEN_DOWN)
+				{
+					accelerometer_calibration_screen = ACC_CALIBRATION_ACC_SCREEN_DOWN;		
+				}
+				else if (State_of_Screen == UI_CALIBRATION_ACCELEROMETER)
 				{
 					lsm303_i2c0_init();
 					Start_LSM();
-					
 					Read_Acc_Calib_Dat();
-					ui_timer_start(CAL_REFRESH_TIME);
-				}
-				else if(State_of_Screen == UI_ACCELEROMETER_CALIBRATION_SCREEN_DOWN)
-				{
-					accelerometer_calibration_screen = ACC_CALIBRATION_ACC_SCREEN_DOWN;		
+					ui_timer_start(CAL_REFRESH_TIME);	
 				}
 				else if(State_of_Screen == UI_CALIBRATION_GPS)
 				{
@@ -347,7 +344,6 @@ ui_screen_update(void)
 				else
 				{
 					ioctl(filesystem_handle, IO_IOCTL_CHANGE_CURRENT_DIR,(uint_32_ptr) pathname);
-					calib_file_check();
 					Read_calib_data("a:IRDMS_calib_data.txt",&IRDMS_Calib_Table);
 					Read_calib_data("a:Pressure_calib_data.txt",&Pressure_Calib_Table);
 					Read_calib_data("a:ROS_calib_data.txt",&ROS1_Calib_Table);
@@ -361,7 +357,6 @@ ui_screen_update(void)
 			else
 			{
 				ioctl(filesystem_handle, IO_IOCTL_CHANGE_CURRENT_DIR,(uint_32_ptr) pathname);
-				calib_file_check();
 				Read_calib_data("a:IRDMS_calib_data.txt",&IRDMS_Calib_Table);
 				Read_calib_data("a:Pressure_calib_data.txt",&Pressure_Calib_Table);
 				Read_calib_data("a:ROS_calib_data.txt",&ROS1_Calib_Table);
@@ -800,6 +795,7 @@ ui_screen_update(void)
 				//calibrate the accelerometer with the values collected
 				Write_Calib_Acc_Dat(); //write the w matrix
 				acc_transform_wrapper();
+				Calib_status[IRDMS_CALIB] = COMPLETED;
 				
 //				Lsm303_deinit();
 //				Stop_LSM();		
