@@ -206,8 +206,8 @@ MenuTableEntry Mainmenu_Table[] = {
 		//   Num,   display_name,       	function,                     state	
 		{ 0, "IRDMS",      			display_IRDMS_Calibration,          	UI_CALIBRATION_IRDMS 			}, 
 		{ 1, "PRESSURE SENSOR", 	display_Pressure_sensor_Calibration, 	UI_CALIBRATION_PRESSURE 		}, 
-//		{ 2, "ACCELEROMETER",    	display_Collect_Accelerometer_Calibration_Data,   	UI_ACCELEROMETER_CALIBRATION_SCREEN_DOWN}, 
-		{ 2, "ACCELEROMETER",    	display_Accelerometer_Calibration,   	UI_CALIBRATION_ACCELEROMETER 	}, 
+		{ 2, "ACCELEROMETER",    	display_Collect_Accelerometer_Calibration_Data,   	UI_ACCELEROMETER_CALIBRATION_SCREEN_DOWN}, 
+//		{ 2, "ACCELEROMETER",    	display_Accelerometer_Calibration,   	UI_CALIBRATION_ACCELEROMETER 	}, 
 //		{ 3, "MAGNETOMETER",      	display_Magnetometer_Calibration,  		UI_CALIBRATION_MAGNETOMETER		}, 
 //		{ 4, "MAGNETOMETER",	    display_compass_calibration_screen,  	UI_COMPASS_CALIBRATION			}, 	
 		{ 3, "ROS", 				display_ROS_Calibration ,        		UI_CALIBRATION_ROS 		    	}, 
@@ -747,7 +747,7 @@ static void Create_AccelerometerMenu_Content(void)
 	}
 	else if(Count_angle != 0)
 	{
-		Angle_result = (((float)(Angle_result/Count_angle)) + 0.5);
+		Angle_result = (((float)(Angle_result/Count_angle)));
 		sprintf(tempString, "%d°", Angle_result);
 		printf("\nSlope Angle = %d°",Angle_result);
 		Count_angle = 0;
@@ -758,7 +758,7 @@ static void Create_AccelerometerMenu_Content(void)
 //		transform_raw_acc();
 		transform_raw_acc_manual();
 		get_euler_angles(&roll, &pitch);
-		printf("roll= %f pitch = %f \n", roll, pitch);
+		//printf("roll= %f pitch = %f \n", roll, pitch);
 		tempAngle = (int_16)pitch;
 		sprintf(tempString, "%d°", tempAngle);
 		printf("\nSlope Angle = %d°",tempAngle);
@@ -895,13 +895,13 @@ static void Create_accelerometer_calibration_screen_content(void)
 	{
 		y_position = 175;
 		Draw_string_new(63,y_position,"CONDITION 3:",COLOUR_BLACK, MEDIUM_FONT);
-		Draw_string_new(43, y_position + 30, "TIP POINT DOWN", COLOUR_BLACK, MEDIUM_FONT);
+		Draw_string_new(43, y_position + 30, "SCREEN UP AT 45", COLOUR_BLACK, MEDIUM_FONT);
 	}
 	else if(accelerometer_calibration_screen == ACC_CALIBRATION_ACC_TIP_POINT_UP)
 	{
 		y_position = 175;
 		Draw_string_new(63,y_position,"CONDITION 4:",COLOUR_BLACK, MEDIUM_FONT);
-		Draw_string_new(60, y_position + 30, "TIP POINT UP", COLOUR_BLACK, MEDIUM_FONT);
+		Draw_string_new(60, y_position + 30, "SCREEN DOWN AT 45", COLOUR_BLACK, MEDIUM_FONT);
 	}
 	else if(accelerometer_calibration_screen == ACC_CALIBRATION_ACC_SCREEN_FACE_IN)
 	{

@@ -258,6 +258,7 @@ MD[1:0] Magnetic sensor mode selection. Default 10 Refer to Table 54
 #define LWGPIO_MUX_B9_GPIO   (1)
 #define BSP_LSM_PIN          (GPIO_PORT_D|GPIO_PIN7)
 #define LWGPIO_MUX_D7_GPIO   (1)
+#define NUM_ACC_CAL_POS		 (2)
 
 #define MAGMAXINT 1073741824
 #define MAGRANGE  16384
@@ -325,6 +326,9 @@ extern float Roll,Pitch,Yaw;
 extern float Gx, Gy, Gz;
 extern int_16 Ax_raw, Ay_raw, Az_raw;
 extern float Ax, Ay, Az;
+extern float acc_cal_samples[600][3];
+extern int acc_count;
+
 
 extern uint8_t calib_count;
 extern uint8_t Magnetometer_Calib_process;

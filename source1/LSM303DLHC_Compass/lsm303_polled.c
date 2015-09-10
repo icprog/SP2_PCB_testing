@@ -49,12 +49,14 @@ uchar Lsm_enable_Test_commands[] = { 0x97, 0x00 };
 uchar Lsm_disable_commands[] = { 0x00, 0x03 };
 char Slope_Measurment_Result_Aspect[4];
 int_16 Slope_Measurment_Result_Slope_Angle = 0;
-double Acc_Calib_Data1[6][4];
+double Acc_Calib_Data1[NUM_ACC_CAL_POS][4]; //double Acc_Calib_Data1[6][4];
 
-uint8_t Acc_Calib_Read_Ctr[6];
+uint8_t Acc_Calib_Read_Ctr[NUM_ACC_CAL_POS];
 int_16 Mx, My, Mz;
 int_16 Ax_raw, Ay_raw, Az_raw;
 float Ax, Ay, Az;
+float acc_cal_samples[600][3];
+int acc_count = 0;
 
 ACC_Values ACC_Data;
 
@@ -102,7 +104,7 @@ uint8_t Magnetometer_Calib_process=1;
 
 void get_euler_angles(float *roll, float *pitch)
 {
-	printf("Gx=%f, Gy=%f, Gz=%f", Gx, Gy, Gz);
+	//printf("Gx=%f, Gy=%f, Gz=%f", Gx, Gy, Gz);
 //	Gx = Ax;
 //	Gy = Ay;
 //	Gz = Az;
@@ -263,10 +265,17 @@ void calibrate_compass_acc(uint8_t Dev_Pos)
 	{
 		Lsm_Data_Ready = 0;
 		read_accelerometer_data();
-
-		Acc_Calib_Data1[Dev_Pos][0] += Ax;//add raw acceleromter values. 
-		Acc_Calib_Data1[Dev_Pos][1] += Ay;
-		Acc_Calib_Data1[Dev_Pos][2] += Az;
+		
+		
+		acc_cal_samples[acc_count][0]  =Ax;
+		acc_cal_samples[acc_count][1]  =Ay;
+		acc_cal_samples[acc_count][2]  =Az;
+		acc_count++;
+		
+		//printf("--- Ax=%f, Ay=%f, Az=%f \n", (double)Ax, (double)Ay, (double)Az);
+		Acc_Calib_Data1[Dev_Pos][0] += (double)Ax;//add raw acceleromter values. 
+		Acc_Calib_Data1[Dev_Pos][1] += (double)Ay;
+		Acc_Calib_Data1[Dev_Pos][2] += (double)Az;
 		Acc_Calib_Read_Ctr[Dev_Pos] += 1;
 		Start_LSM();
 	}
@@ -276,7 +285,7 @@ void calibrate_compass_acc(uint8_t Dev_Pos)
 void Calib_Acc_Avg()
 {
 	uint8_t Dev_Pos=0;
-	for(Dev_Pos=0;Dev_Pos<6;Dev_Pos++)
+	for(Dev_Pos=0;Dev_Pos<NUM_ACC_CAL_POS;Dev_Pos++)
 	{
 		Acc_Calib1.Acc_Calib_Write_Buf[Dev_Pos][0] = 
 				(Acc_Calib_Data1[Dev_Pos][0]/Acc_Calib_Read_Ctr[Dev_Pos]);
@@ -309,7 +318,7 @@ void Write_Calib_Acc_Dat()
 	{
 
 		uint8_t Dev_Pos=0;
-		for(Dev_Pos=0;Dev_Pos<6;Dev_Pos++)
+		for(Dev_Pos=0;Dev_Pos<NUM_ACC_CAL_POS;Dev_Pos++)
 		{
 			fprintf(Ser_fd_ptr, "%d\t",Acc_Calib1.Acc_Calib_Write_Buf[Dev_Pos][0]);
 			fprintf(Ser_fd_ptr, "%d\t",Acc_Calib1.Acc_Calib_Write_Buf[Dev_Pos][1]);
@@ -746,6 +755,7 @@ void read_accelerometer_data(void)
 	Ay_raw = (int_16) ((uint_16) Lsm303_data_buffer[3] << 8) + (uint_16) Lsm303_data_buffer[2];
 	Az_raw = (int_16) ((uint_16) Lsm303_data_buffer[5] << 8) + (uint_16) Lsm303_data_buffer[4];
 	
+	//printf("Ax=%d, Ay=%d, Az=%d \n", Ax_raw, Ay_raw, Az_raw);
 #if ENABLE_LSM303DLHC
 	Ax_raw = (Ax_raw >> 4);
 	Ay_raw = (Ay_raw >> 4);
@@ -755,7 +765,7 @@ void read_accelerometer_data(void)
 	Ax =  (float)Ax_raw;
 	Ay =  (float)Ay_raw;
 	Az =  (float)Az_raw;
-	printf("Ax=%f, Ay=%f, Az=%f \n", Ax, Ay, Az);
+	//printf("Ax=%f, Ay=%f, Az=%f \n", Ax, Ay, Az);
 
 }
 
@@ -777,7 +787,7 @@ void read_magnetometer_data(void)
 	Bz = (int_16) ((uint_16) Lsm303_data_buffer[2] << 8) + (uint_16) Lsm303_data_buffer[3];
 	
 	if ((Bx & 0x0800) == 0x0800) Bx |= 0xF000;
-	if ((By & 0x0800) == 0x0800) By |= 0xF000;		
+	if ((By & 0x0800) == 0x0800) By |= 0xF000;	
 	if ((Bz & 0x0800) == 0x0800) Bz |= 0xF000;
 	
 #else if ENABLE_LSM303D	

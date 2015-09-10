@@ -628,6 +628,8 @@ ui_screen_update(void)
 				accelerometer_calibration_screen = ACC_CALIBRATION_ACC_SCREEN_UP;
 				State_of_Screen = UI_ACCELEROMETER_CALIBRATION_SCREEN_UP;
 				display_Collect_Accelerometer_Calibration_Data();
+				
+				acc_transform_wrapper2(0);				
 				break;
 
 			default:
@@ -661,6 +663,9 @@ ui_screen_update(void)
 				accelerometer_calibration_screen = ACC_CALIBRATION_ACC_TIP_POINT_DOWN;
 				State_of_Screen = UI_ACCELEROMETER_CALIBRATION_TIP_POINT_DOWN;
 				display_Collect_Accelerometer_Calibration_Data();
+				
+				acc_transform_wrapper2(1);	
+				
 				break;
 
 			default:
@@ -694,6 +699,9 @@ ui_screen_update(void)
 				accelerometer_calibration_screen = ACC_CALIBRATION_ACC_TIP_POINT_UP;
 				State_of_Screen = UI_ACCELEROMETER_CALIBRATION_TIP_POINT_UP;
 				display_Collect_Accelerometer_Calibration_Data();
+				
+				Calib_Acc_Avg();
+				acc_transform_wrapper2(2);
 				break;
 
 			default:
@@ -724,9 +732,21 @@ ui_screen_update(void)
 				Buzzer_Short_Beep(0);
 				collect_accelerometer_data(ACC_CALIBRATION_ACC_TIP_POINT_UP);
 				Buzzer_Short_Beep(1);
-				accelerometer_calibration_screen = ACC_CALIBRATION_ACC_SCREEN_FACE_IN;
-				State_of_Screen = UI_ACCELEROMETER_CALIBRATION_SCREEN_FACE_IN;
-				display_Collect_Accelerometer_Calibration_Data();
+				//accelerometer_calibration_screen = ACC_CALIBRATION_ACC_SCREEN_FACE_IN;
+				//State_of_Screen = UI_ACCELEROMETER_CALIBRATION_SCREEN_FACE_IN;
+				//display_Collect_Accelerometer_Calibration_Data();
+				
+				
+				//calculate transform from 2 positions
+				Calib_Acc_Avg();
+				acc_transform_wrapper2(3);
+				State_of_Screen = UI_ACCELEROMETER_CALIBRATION_TIP_POINT_DOWN;
+				
+				State_of_Screen = UI_CALIBRATION_ACCELEROMETER;
+				lsm303_i2c0_init();
+				Start_LSM();
+				Read_Acc_Calib_Dat();
+				ui_timer_start(CAL_REFRESH_TIME);
 				break;
 
 			default:
@@ -795,7 +815,6 @@ ui_screen_update(void)
 				//calibrate the accelerometer with the values collected
 				Write_Calib_Acc_Dat(); //write the w matrix
 				acc_transform_wrapper();
-				Calib_status[IRDMS_CALIB] = COMPLETED;
 				
 //				Lsm303_deinit();
 //				Stop_LSM();		
@@ -903,7 +922,7 @@ ui_screen_update(void)
 //			transform_raw_acc();
 			transform_raw_acc_manual();
 			get_euler_angles(&roll, &pitch);
-			printf("roll= %f pitch = %f \n", roll, pitch);
+			//printf("roll= %f pitch = %f \n", roll, pitch);
 			tempAngle = (int_16)pitch;
 			Angle_result = Angle_result + tempAngle;
 			Count_angle++;

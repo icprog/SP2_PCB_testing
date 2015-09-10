@@ -27,6 +27,14 @@ volatile uint_8 Accelerometer_Condition_selection = 0;
 volatile uint_8 Magnetometer_Condition_selection = 0;
 volatile uint_8 Acc_reading_status = 0;
 
+float cal_pitch;
+float rad_shift;
+float pitch_screen_down = 0; //initalize to some greater than pi
+float pitch_screen_up = 0;
+float pitch_screen_down45 = 0;
+float pitch_screen_up45 = 0;
+
+
 
 CalibTable IRDMS_Calib_Table[] = {
 
@@ -67,9 +75,9 @@ CalibTable Accelerometer_Calib_Table[] = {
 		
 		//  condition   min voltage,    max voltage	
 		{ 	"0°",      	-1.0,  			1.0,	180.0,	INCOMPLETE }, 
-		{ 	"30°", 		29.0,  			31.0,	180.0,	INCOMPLETE }, 
-		{ 	"60°",      59.0,  			61.0,	180.0,	INCOMPLETE }, 
-		{ 	"90°", 		89.0,  			91.0,	180.0,	INCOMPLETE }, 
+		{ 	"20°", 		29.0,  			31.0,	180.0,	INCOMPLETE }, 
+		{ 	"40°",      59.0,  			61.0,	180.0,	INCOMPLETE }, 
+		{ 	"60°", 		89.0,  			91.0,	180.0,	INCOMPLETE }, 
 
 //#define NUM_OF_ACC_CONDITION	(4)
 
@@ -94,12 +102,14 @@ CalibTable Magnetometer_Calib_Table[] = {
  */
 void transform_raw_acc_manual(void)
 {
-	float deg2rad = 3.14159/180;
-	float deg_shift = -13.5;
-	float rad_shift = deg_shift*deg2rad;
+	
+	//float deg2rad = 3.14159/180;
+	//float deg_shift = -13.5;
+	//float rad_shift = deg_shift*deg2rad;
+	
 	//get raw acc data
 	read_accelerometer_data();
-	printf("Ax=%f, Ay=%f, Az=%f", Ax, Ay, Az);
+	//printf("Ax=%f, Ay=%f, Az=%f", Ax, Ay, Az);
 	struct matrix_struct x;
 	x.m = 3;
 	x.n = 1;
@@ -128,8 +138,6 @@ void transform_raw_acc_manual(void)
 	Gy = x_prime.mat[1][0];
 	Gz = x_prime.mat[2][0];
 	
-
-
 }
 void transform_raw_acc(void)
 {
@@ -145,6 +153,71 @@ void transform_raw_acc(void)
 	Gy = (float) ((ACC_Data.data.ACC01*ax)+(ACC_Data.data.ACC11*ay)+(ACC_Data.data.ACC21*az)+ACC_Data.data.ACC31);
 	Gz = (float) ((ACC_Data.data.ACC02*ax)+(ACC_Data.data.ACC12*ay)+(ACC_Data.data.ACC22*az)+ACC_Data.data.ACC32);
 }
+
+
+void acc_transform_wrapper2(int pos_num)
+{
+	
+//	//get raw acc values and pitch calcuations
+//	float x_vec1 = (float)Acc_Calib1.Acc_Calib_Write_Buf[0][0];
+//	float y_vec1 = (float)Acc_Calib1.Acc_Calib_Write_Buf[0][1];
+//	float z_vec1 = (float)Acc_Calib1.Acc_Calib_Write_Buf[0][2];
+//	float pitch1 = atan2f(-x_vec1, sqrt(y_vec1*y_vec1 + z_vec1*z_vec1));
+//	printf("x: %f, y: %f, z:%f \n", x_vec1, y_vec1, z_vec1);
+//	
+//	float x_vec2 = (float)Acc_Calib1.Acc_Calib_Write_Buf[1][0];
+//	float y_vec2 = (float)Acc_Calib1.Acc_Calib_Write_Buf[1][1];
+//	float z_vec2 = (float)Acc_Calib1.Acc_Calib_Write_Buf[1][2];
+//	float pitch2 = atan2f(-x_vec2, sqrt(y_vec2*y_vec2 + z_vec2*z_vec2));
+//	printf("x: %f, y: %f, z:%f \n", x_vec2, y_vec2, z_vec2);
+	
+//	printf("Acc Count: %d \n", acc_count);
+//	for(int i = 0; i < acc_count; i++)
+//	{
+//		
+//		printf("Stored Ax=%f, Ay=%f, Az=%f \n", acc_cal_samples[i][0], acc_cal_samples[i][1], acc_cal_samples[i][2]);
+//	}
+	
+
+	double xsum1 = 0, ysum1 = 0, zsum1 = 0;
+	for(int i = 0; i < acc_count; i++)
+	{
+		xsum1 += acc_cal_samples[i][0];
+		ysum1 += acc_cal_samples[i][1];
+		zsum1 += acc_cal_samples[i][2];
+	}
+	float xvec1 = xsum1/acc_count;
+	float yvec1 = ysum1/acc_count;
+	float zvec1 = zsum1/acc_count;
+	cal_pitch = atan2f(-xvec1, sqrt(yvec1*yvec1 + zvec1*zvec1));
+	
+	printf("x: %f, y: %f, z:%f \n", xvec1, yvec1, zvec1);
+	printf("pitch = %f \n", cal_pitch);
+	acc_count = 0;
+	
+	if(pos_num == 0)
+	{
+		pitch_screen_down = cal_pitch;
+	}
+	else if(pos_num == 1)
+	{
+		//pitch_screen_up = cal_pitch - .78539;
+		pitch_screen_up = -cal_pitch;
+	}
+	else if(pos_num == 2)
+	{
+		//pitch_screen_up = cal_pitch - .78539;
+		pitch_screen_down45 = -(cal_pitch - .78539);
+	}
+	else if(pos_num == 3)
+	{
+		//pitch_screen_up = cal_pitch - .78539;
+		pitch_screen_up45 = cal_pitch - 0.78539;
+		rad_shift = -(pitch_screen_down + pitch_screen_up + pitch_screen_down45 + pitch_screen_up45)/4;
+		printf("pitch down = %f, pitch up = %f, pitch down 45= %f, pitch up 45= %f, rad_shift = %f \n", pitch_screen_down, pitch_screen_up, pitch_screen_down45, pitch_screen_up45,rad_shift);
+	}
+	
+		}
 void acc_transform_wrapper(void)
 {
 	printf("acc_tranform_wrapper \n");
@@ -528,17 +601,18 @@ uint_8 calibrate_Accelerometer2(void)
 	float pitch, roll;
 	float slope;
 	float angle_sum = 0.0;
-	int sample_count = 0.0;
+	int sample_count = 0;
 	ui_timer_start(500);
 	while(Check_UI_Timer_Timeout() != TIME_OUT)
 	{
+		read_accelerometer_data();
 		get_euler_angles(&roll, &pitch);
 		angle_sum += pitch;
 		sample_count++;			
 	}
 	
 	slope = angle_sum/sample_count;
-	printf("sum= %f, count=%d, avg=&f", angle_sum, sample_count, slope);
+	printf("sum= %f, count=%d, slope=%f \n", angle_sum, sample_count, slope);
 	if((slope >= Accelerometer_Calib_Table[Accelerometer_Condition_selection].min_voltage) && 
 			(slope <= Accelerometer_Calib_Table[Accelerometer_Condition_selection].max_voltage))
 	{
