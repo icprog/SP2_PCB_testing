@@ -11,6 +11,7 @@
  *****************************************************************************/
 
 #include "common_headers.h"
+#include "matrix_operations.h"
 
 TEST_COUNT_FLASH Test_Count_Flash;
 
@@ -161,9 +162,7 @@ void UI_Task(uint_32 )
 	memset(Calib_status,0x00,7);
 	memset(mag_temp_heading_buff,0x00,200);
 	Update_Calib_Buff();
-	calib_file_check();
 	State_of_Screen = UI_CALIBRATION_MENU;
-	Read_Acc_Calib_values_from_Sd_Card();
 	display_Mainmenu();
 
 	while(1)
@@ -196,27 +195,21 @@ ui_screen_update(void)
 				State_of_Screen = Mainmenu_Table[Main_menu_selection].UI_state;
 
 				if ((State_of_Screen == UI_CALIBRATION_IRDMS) || (State_of_Screen == UI_CALIBRATION_PRESSURE) 
-						|| (State_of_Screen == UI_CALIBRATION_ROS_1) || (State_of_Screen == UI_CALIBRATION_ROS_2))
+						|| (State_of_Screen == UI_CALIBRATION_ROS))
 				{							
 					ADC_Init();
 					ui_timer_start(CAL_REFRESH_TIME);
 				}
-				else if ( (State_of_Screen == UI_CALIBRATION_ACCELEROMETER))
-					//						|| (State_of_Screen == UI_CALIBRATION_MAGNETOMETER))
-				{
-					if(Read_Acc_Calib_values_from_Sd_Card() == 0)
-					{
-						State_of_Screen = UI_ACCELEROMETER_CALIB_ERROR_SCREEN;
-						display_Accelerometer_Calib_Values_Error_Screen();
-						break;
-					}
-					lsm303_i2c0_init();
-					Start_LSM();
-					ui_timer_start(CAL_REFRESH_TIME);
-				}
-				else if(State_of_Screen == UI_ACCELEROMETER_CALIBRATION_SCREEN_DOWN)
+				else if (State_of_Screen == UI_ACCELEROMETER_CALIBRATION_SCREEN_DOWN)
 				{
 					accelerometer_calibration_screen = ACC_CALIBRATION_ACC_SCREEN_DOWN;		
+				}
+				else if (State_of_Screen == UI_CALIBRATION_ACCELEROMETER)
+				{
+					lsm303_i2c0_init();
+					Start_LSM();
+					Read_Acc_Calib_Dat();
+					ui_timer_start(CAL_REFRESH_TIME);	
 				}
 				else if(State_of_Screen == UI_CALIBRATION_GPS)
 				{
@@ -351,14 +344,12 @@ ui_screen_update(void)
 				else
 				{
 					ioctl(filesystem_handle, IO_IOCTL_CHANGE_CURRENT_DIR,(uint_32_ptr) pathname);
-					calib_file_check();
 					Read_calib_data("a:IRDMS_calib_data.txt",&IRDMS_Calib_Table);
 					Read_calib_data("a:Pressure_calib_data.txt",&Pressure_Calib_Table);
 					Read_calib_data("a:ROS_calib_data.txt",&ROS1_Calib_Table);
 					Read_calib_data("a:ROS_calib_data.txt",&ROS2_Calib_Table);
 					Read_calib_data("a:Accelerometer_calib_data.txt",&Accelerometer_Calib_Table);
 					Read_calib_data("a:Magnetometer_calib_data.txt",&Magnetometer_Calib_Table);
-					Read_Acc_Calib_values_from_Sd_Card();
 					State_of_Screen = UI_FIRMWARE_CORRUPT;
 					Display_Firmware_Corrupted();
 				}
@@ -366,14 +357,12 @@ ui_screen_update(void)
 			else
 			{
 				ioctl(filesystem_handle, IO_IOCTL_CHANGE_CURRENT_DIR,(uint_32_ptr) pathname);
-				calib_file_check();
 				Read_calib_data("a:IRDMS_calib_data.txt",&IRDMS_Calib_Table);
 				Read_calib_data("a:Pressure_calib_data.txt",&Pressure_Calib_Table);
 				Read_calib_data("a:ROS_calib_data.txt",&ROS1_Calib_Table);
 				Read_calib_data("a:ROS_calib_data.txt",&ROS2_Calib_Table);
 				Read_calib_data("a:Accelerometer_calib_data.txt",&Accelerometer_Calib_Table);
 				Read_calib_data("a:Magnetometer_calib_data.txt",&Magnetometer_Calib_Table);
-				Read_Acc_Calib_values_from_Sd_Card();
 				State_of_Screen = UI_CALIBRATION_MENU;
 				display_Mainmenu();
 			}
@@ -639,6 +628,8 @@ ui_screen_update(void)
 				accelerometer_calibration_screen = ACC_CALIBRATION_ACC_SCREEN_UP;
 				State_of_Screen = UI_ACCELEROMETER_CALIBRATION_SCREEN_UP;
 				display_Collect_Accelerometer_Calibration_Data();
+				
+				acc_transform_wrapper2(0);				
 				break;
 
 			default:
@@ -672,6 +663,9 @@ ui_screen_update(void)
 				accelerometer_calibration_screen = ACC_CALIBRATION_ACC_TIP_POINT_DOWN;
 				State_of_Screen = UI_ACCELEROMETER_CALIBRATION_TIP_POINT_DOWN;
 				display_Collect_Accelerometer_Calibration_Data();
+				
+				acc_transform_wrapper2(1);	
+				
 				break;
 
 			default:
@@ -705,6 +699,9 @@ ui_screen_update(void)
 				accelerometer_calibration_screen = ACC_CALIBRATION_ACC_TIP_POINT_UP;
 				State_of_Screen = UI_ACCELEROMETER_CALIBRATION_TIP_POINT_UP;
 				display_Collect_Accelerometer_Calibration_Data();
+				
+				Calib_Acc_Avg();
+				acc_transform_wrapper2(2);
 				break;
 
 			default:
@@ -735,9 +732,21 @@ ui_screen_update(void)
 				Buzzer_Short_Beep(0);
 				collect_accelerometer_data(ACC_CALIBRATION_ACC_TIP_POINT_UP);
 				Buzzer_Short_Beep(1);
-				accelerometer_calibration_screen = ACC_CALIBRATION_ACC_SCREEN_FACE_IN;
-				State_of_Screen = UI_ACCELEROMETER_CALIBRATION_SCREEN_FACE_IN;
-				display_Collect_Accelerometer_Calibration_Data();
+				//accelerometer_calibration_screen = ACC_CALIBRATION_ACC_SCREEN_FACE_IN;
+				//State_of_Screen = UI_ACCELEROMETER_CALIBRATION_SCREEN_FACE_IN;
+				//display_Collect_Accelerometer_Calibration_Data();
+				
+				
+				//calculate transform from 2 positions
+				Calib_Acc_Avg();
+				acc_transform_wrapper2(3);
+				State_of_Screen = UI_ACCELEROMETER_CALIBRATION_TIP_POINT_DOWN;
+				
+				State_of_Screen = UI_CALIBRATION_ACCELEROMETER;
+				lsm303_i2c0_init();
+				Start_LSM();
+				Read_Acc_Calib_Dat();
+				ui_timer_start(CAL_REFRESH_TIME);
 				break;
 
 			default:
@@ -803,20 +812,21 @@ ui_screen_update(void)
 				accelerometer_calibration_screen = ACC_CALIBRATION_ACC_SCREEN_DOWN;
 				Calib_Acc_Avg();
 				
-//				Stop_PDB_Timer();
-				Write_Calib_Acc_Dat();
-//				Start_PDB_Timer();
+				//calibrate the accelerometer with the values collected
+				Write_Calib_Acc_Dat(); //write the w matrix
+				acc_transform_wrapper();
 				
-				Lsm303_deinit();
-				Stop_LSM();		
-				State_of_Screen = UI_CALIBRATION_MENU;
-				display_Mainmenu();
+//				Lsm303_deinit();
+//				Stop_LSM();		
+//				State_of_Screen = UI_CALIBRATION_MENU;
+//				display_Mainmenu();
 				
-//				State_of_Screen = UI_CALIBRATION_ACCELEROMETER;
-//				lsm303_i2c0_init();
-//				Start_LSM();
-//				ui_timer_start(CAL_REFRESH_TIME);
-//				display_Accelerometer_Calibration();
+				State_of_Screen = UI_CALIBRATION_ACCELEROMETER;
+				lsm303_i2c0_init();
+				Start_LSM();
+				Read_Acc_Calib_Dat();
+				ui_timer_start(CAL_REFRESH_TIME);
+				
 
 			default:
 				break;
@@ -843,7 +853,7 @@ ui_screen_update(void)
 
 			case RIGHT_BUTTON_PRESSED:
 
-				Calib_result = calibrate_Accelerometer();
+				Calib_result = calibrate_Accelerometer2();
 				if(Calib_result == COMPLETED)
 				{
 					Calib_status[ACCELEROMETER_CALIB] = COMPLETED;
@@ -907,16 +917,19 @@ ui_screen_update(void)
 		}		
 		else if(State_of_Screen == UI_CALIBRATION_ACCELEROMETER)
 		{
-			if(get_slope_measurement(&tempAngle, aspect, &magnetic_heading) == 0)
-			{
-				Angle_result = Angle_result + tempAngle;
-				Count_angle++;
-				//					sprintf(tempString, "%d°", tempAngle);
-				//					printf("\nSlope Angle = %d°",tempAngle);
-			}
+
+			float roll, pitch;
+//			transform_raw_acc();
+			transform_raw_acc_manual();
+			get_euler_angles(&roll, &pitch);
+			//printf("roll= %f pitch = %f \n", roll, pitch);
+			tempAngle = (int_16)pitch;
+			Angle_result = Angle_result + tempAngle;
+			Count_angle++;
+
 		}
 		break;		
-
+		
 	case UI_CALIBRATION_MAGNETOMETER:
 
 		if (Button_Press_Status != BUTTON_PRESS_NOT_PENDING)
@@ -1005,7 +1018,7 @@ ui_screen_update(void)
 		}
 		break;
 
-	case UI_CALIBRATION_ROS_1:
+	case UI_CALIBRATION_ROS:
 
 		if (Button_Press_Status != BUTTON_PRESS_NOT_PENDING)
 		{
@@ -1020,10 +1033,10 @@ ui_screen_update(void)
 
 			case RIGHT_BUTTON_PRESSED:
 
-				Calib_result = calibrate_ROS1_Sensor();
+				Calib_result = calibrate_ROS_Sensors();
 				if(Calib_result == COMPLETED)
 				{
-					Calib_status[ROS1_CALIB] = COMPLETED;
+					Calib_status[ROS_CALIB] = COMPLETED;
 					for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
 					{
 						ROS1_Calib_Table[i].Calib_status = INCOMPLETE;
@@ -1031,23 +1044,23 @@ ui_screen_update(void)
 					ADC_deinit();	
 					State_of_Screen = UI_CALIBRATION_MENU;
 					display_Mainmenu();
-					Write_ROS1_Data();
+					Write_ROS_Data();
 					break;
 				}
 				else if(Calib_result == INCOMPLETE)
 				{					
-					if(Calib_status[ROS1_CALIB] == COMPLETED)
+					if(Calib_status[ROS_CALIB] == COMPLETED)
 					{
 						Stop_PDB_Timer();
-						Write_ROS1_Data();						
+						Write_ROS_Data();						
 						Start_PDB_Timer();
 					}
-					display_ROS1_Calibration();	
+					display_ROS_Calibration();	
 				}
 				else if(Calib_result == OUT_OF_RANGE)
 				{
 					ADC_deinit();
-					Next_State = UI_CALIBRATION_ROS_1;
+					Next_State = UI_CALIBRATION_ROS;
 					State_of_Screen = UI_CALIBRATION_ERROR_SCREEN;					
 					Refresh_Lcd_Buffer((uint_8 *) Calibration_SENSOR_ERROR);
 				}
@@ -1055,16 +1068,16 @@ ui_screen_update(void)
 
 			case UP_BUTTON_PRESSED:
 				printf("Up Button Pressed \n");
-				State_of_Screen = UI_CALIBRATION_ROS_1;
+				State_of_Screen = UI_CALIBRATION_ROS;
 				ROS1_Condition_Key_up();
-				display_ROS1_Calibration();
+				display_ROS_Calibration();
 				break;
 
 			case DOWN_BUTTON_PRESSED:
 				printf("Down Button Pressed \n");
-				State_of_Screen = UI_CALIBRATION_ROS_1;
+				State_of_Screen = UI_CALIBRATION_ROS;
 				ROS1_Condition_Key_down();
-				display_ROS1_Calibration();
+				display_ROS_Calibration();
 				break;
 
 			default:
@@ -1074,89 +1087,13 @@ ui_screen_update(void)
 			Button_Press_Status = BUTTON_PRESS_NOT_PENDING;
 		}
 
-		if ((Check_UI_Timer_Timeout() == TIME_OUT) && (State_of_Screen == UI_CALIBRATION_ROS_1))
+		if ((Check_UI_Timer_Timeout() == TIME_OUT) && (State_of_Screen == UI_CALIBRATION_ROS))
 		{          
-			display_ROS1_Calibration();
+			display_ROS_Calibration();
 			ui_timer_start(CAL_REFRESH_TIME);
 		}		
 		break;
 		
-	case UI_CALIBRATION_ROS_2:
-
-			if (Button_Press_Status != BUTTON_PRESS_NOT_PENDING)
-			{
-				switch (Button_Press_Status)
-				{
-				case LEFT_BUTTON_PRESSED:
-					printf("Left Button Pressed \n");
-					ADC_deinit();			
-					State_of_Screen = UI_CALIBRATION_MENU;
-					display_Mainmenu();
-					break;
-
-				case RIGHT_BUTTON_PRESSED:
-
-					Calib_result = calibrate_ROS2_Sensor();
-					if(Calib_result == COMPLETED)
-					{
-						Calib_status[ROS2_CALIB] = COMPLETED;
-						for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
-						{
-							ROS2_Calib_Table[i].Calib_status = INCOMPLETE;
-						}
-						ADC_deinit();	
-						State_of_Screen = UI_CALIBRATION_MENU;
-						display_Mainmenu();
-						Write_ROS2_Data();
-						break;
-					}
-					else if(Calib_result == INCOMPLETE)
-					{					
-						if(Calib_status[ROS2_CALIB] == COMPLETED)
-						{
-							Stop_PDB_Timer();
-							Write_ROS2_Data();						
-							Start_PDB_Timer();
-						}
-						display_ROS2_Calibration();	
-					}
-					else if(Calib_result == OUT_OF_RANGE)
-					{
-						ADC_deinit();
-						Next_State = UI_CALIBRATION_ROS_2;
-						State_of_Screen = UI_CALIBRATION_ERROR_SCREEN;					
-						Refresh_Lcd_Buffer((uint_8 *) Calibration_SENSOR_ERROR);
-					}
-					break;
-
-				case UP_BUTTON_PRESSED:
-					printf("Up Button Pressed \n");
-					State_of_Screen = UI_CALIBRATION_ROS_2;
-					ROS2_Condition_Key_up();
-					display_ROS2_Calibration();
-					break;
-
-				case DOWN_BUTTON_PRESSED:
-					printf("Down Button Pressed \n");
-					State_of_Screen = UI_CALIBRATION_ROS_2;
-					ROS2_Condition_Key_down();
-					display_ROS2_Calibration();
-					break;
-
-				default:
-					printf("Invalid Button Pressed \n");
-					break;
-				}
-				Button_Press_Status = BUTTON_PRESS_NOT_PENDING;
-			}
-
-			if ((Check_UI_Timer_Timeout() == TIME_OUT) && (State_of_Screen == UI_CALIBRATION_ROS_2))
-			{          
-				display_ROS2_Calibration();
-				ui_timer_start(CAL_REFRESH_TIME);
-			}		
-			break;
-
 	case UI_CALIBRATION_GPS:
 		//		printf("\nUI_FIRMWARE_UPDATE\n");
 		if (Button_Press_Status != BUTTON_PRESS_NOT_PENDING)
@@ -1274,16 +1211,11 @@ ui_screen_update(void)
 					ui_timer_start(CAL_REFRESH_TIME);	
 					break;
 
-				case UI_CALIBRATION_ROS_1:
+				case UI_CALIBRATION_ROS:
 					ADC_Init();
-					display_ROS1_Calibration();
+					display_ROS_Calibration();
 					ui_timer_start(CAL_REFRESH_TIME);
 
-					break;
-				case UI_CALIBRATION_ROS_2:
-					ADC_Init();
-					display_ROS2_Calibration();
-					ui_timer_start(CAL_REFRESH_TIME);
 					break;
 					
 				case UI_CALIBRATION_GPS:
@@ -1438,8 +1370,38 @@ ui_screen_update(void)
 		}
 		break;
 
-		break; 
-
+	case MATRIX_TEST:
+		matrix_test();
+		
+	
+//		w.mat[0][0] = -8700;
+//		w.mat[0][1] = -192;
+//		w.mat[0][2] = -28079;
+//		w.mat[0][3] = 1;
+//		w.mat[1][0] = 8103;
+//		w.mat[1][1] = -1953;
+//		w.mat[1][2] = 30355;
+//		w.mat[1][3] = 1;
+//		w.mat[2][0] = 27282;
+//		w.mat[2][1] = -1000;
+//		w.mat[2][2] = -8648;
+//		w.mat[2][3] = 1;
+//		w.mat[3][0] = -27502;
+//		w.mat[3][1] = 1663;
+//		w.mat[3][2] = 7415;
+//		w.mat[3][3] = 1;
+//		w.mat[4][0] = -846;
+//		w.mat[4][1] = 27803;
+//		w.mat[4][2] = 2635;
+//		w.mat[4][3] = 1;
+//		w.mat[5][0] = 390;
+//		w.mat[5][1] = -27699;
+//		w.mat[5][2] = -4107;
+//		w.mat[5][3] = 1;
+		
+		State_of_Screen = UI_CALIBRATION_MENU;
+		
+		break;
 
 	default:
 		printf("\nInvalid screen\n");

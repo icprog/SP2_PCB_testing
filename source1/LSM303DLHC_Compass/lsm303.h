@@ -250,7 +250,7 @@ MD[1:0] Magnetic sensor mode selection. Default 10 Refer to Table 54
 #define I2C_DEVICE_POLLED    "i2c0:"
 #define I2C_DEVICE_INTERRUPT "ii2c0:"
 #define ENABLE_I2C_INTERRUPT  BSPCFG_ENABLE_II2C0
-#define ACCELROMETER_GAIN    (1000)
+#define ACCELEROMETER_GAIN    (1000)
 #define MAGNETOMETR_XY_GAIN  (1100)
 #define MAGNETOMETR_Z_GAIN   (980)
 #define DEG_TO_RAD           (0.0174532925)
@@ -258,6 +258,7 @@ MD[1:0] Magnetic sensor mode selection. Default 10 Refer to Table 54
 #define LWGPIO_MUX_B9_GPIO   (1)
 #define BSP_LSM_PIN          (GPIO_PORT_D|GPIO_PIN7)
 #define LWGPIO_MUX_D7_GPIO   (1)
+#define NUM_ACC_CAL_POS		 (2)
 
 #define MAGMAXINT 1073741824
 #define MAGRANGE  16384
@@ -269,9 +270,14 @@ typedef union
 }ACC_CALIB;
 extern ACC_CALIB Acc_Calib1;
 
+//typedef struct
+//{
+//	double ACC11 , ACC21 , ACC31 , ACC12, ACC22 , ACC32 ,ACC13 , ACC23 , ACC33 ,ACC10 , ACC20  , ACC30 ;
+//}ACC;
+
 typedef struct
 {
-	double ACC11 , ACC21 , ACC31 , ACC12, ACC22 , ACC32 ,ACC13 , ACC23 , ACC33 ,ACC10 , ACC20  , ACC30 ;
+	double ACC00, ACC01, ACC02, ACC10 , ACC11 , ACC12 , ACC20 ,ACC21 , ACC22, ACC30, ACC31, ACC32 ;
 }ACC;
 
 typedef union
@@ -302,6 +308,7 @@ extern void collect_accelerometer_data(uint8_t position);
 uint_8 Lsm303_Test_Init(void);
 extern uint_8 Lsm303_deinit(void);
 extern uint_8 get_slope_measurement(int_16 *slope_angle, char *aspect, uint_16 *magnetic_heading);
+void get_euler_angles(float *roll, float *pitch);
 
 extern void Stop_LSM(void);
 void read_accelerometer_data(void);
@@ -311,11 +318,17 @@ extern void update_magnetomer_calib_data(void);
 extern void reset_calibration_values(void);
 extern void Sample_average_LSM_data(void);
 extern void basicmagcalib(int *cBx, int *cBy, int *cBz);
-extern void fusion6(int Gx, int Gy, int Gz, int Bx, int By, int Bz, float *Roll, float *Pitch, float *Yaw);
+extern void fusion6(float Gx, float Gy, float Gz, int Bx, int By, int Bz, float *Roll, float *Pitch, float *Yaw);
 extern void Get_Sample_average_LSM_results(int_16 *, char *, uint_16 *);
 
-extern int Gx,Gy,Gz,Bx,By,Bz, final_yaw, final_roll;
+extern int Bx,By,Bz, final_yaw, final_roll;
 extern float Roll,Pitch,Yaw;
+extern float Gx, Gy, Gz;
+extern int_16 Ax_raw, Ay_raw, Az_raw;
+extern float Ax, Ay, Az;
+extern float acc_cal_samples[600][3];
+extern int acc_count;
+
 
 extern uint8_t calib_count;
 extern uint8_t Magnetometer_Calib_process;

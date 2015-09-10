@@ -49,11 +49,14 @@ uchar Lsm_enable_Test_commands[] = { 0x97, 0x00 };
 uchar Lsm_disable_commands[] = { 0x00, 0x03 };
 char Slope_Measurment_Result_Aspect[4];
 int_16 Slope_Measurment_Result_Slope_Angle = 0;
-int32_t Acc_Calib_Data1[6][4];
+double Acc_Calib_Data1[NUM_ACC_CAL_POS][4]; //double Acc_Calib_Data1[6][4];
 
-uint8_t Acc_Calib_Read_Ctr[6];
-int_16 Ax, Ay, Az, Mx, My, Mz;
-
+uint8_t Acc_Calib_Read_Ctr[NUM_ACC_CAL_POS];
+int_16 Mx, My, Mz;
+int_16 Ax_raw, Ay_raw, Az_raw;
+float Ax, Ay, Az;
+float acc_cal_samples[600][3];
+int acc_count = 0;
 
 ACC_Values ACC_Data;
 
@@ -92,34 +95,39 @@ static int Bxmax = -MAGMAXINT, Bymax = -MAGMAXINT, Bzmax = -MAGMAXINT;
 static int Bxofs=0, Byofs=0, Bzofs=0; // offset: (max+min)/2
 static int Bxrange2=MAGRANGE, Byrange2=MAGRANGE, Bzrange2=MAGRANGE; // half range: (max-min)/2
 
-int Gx,Gy,Gz,Bx,By,Bz, final_yaw, final_roll;
+int Bx,By,Bz, final_yaw, final_roll;
 float Roll,Pitch,Yaw;
+float Gx, Gy, Gz;
 
 uint8_t calib_count =100;
 uint8_t Magnetometer_Calib_process=1;
 
-/*-----------------------------------------------------------------------------
- *  Function:     calibrate_acc_with_values
- *  Brief:        Update calibrate data and save them to flash 
- *  Parameter:    None
- *  Return:       None
------------------------------------------------------------------------------*/
-void calibrate_acc_with_calib_values(vector *a)
+void get_euler_angles(float *roll, float *pitch)
 {
-	double ax,ay,az;
+	//printf("Gx=%f, Gy=%f, Gz=%f", Gx, Gy, Gz);
+//	Gx = Ax;
+//	Gy = Ay;
+//	Gz = Az;
+	
+	
+	float sphi, cphi, Gz2;
+	float phi, theta;
 
-	ax = (double) Ax / ACCELROMETER_GAIN;
-	ay = (double) Ay / ACCELROMETER_GAIN;
-	az = (double) Az / ACCELROMETER_GAIN;
-//	printf("\n Before %d,%d,%d",Ax,Ay,Az);
-	a->y = (float) ((ACC_Data.data.ACC11*ax)+(ACC_Data.data.ACC12*ay)+(ACC_Data.data.ACC13*az)+ACC_Data.data.ACC10);
-	a->x = (float) ((ACC_Data.data.ACC21*ax)+(ACC_Data.data.ACC22*ay)+(ACC_Data.data.ACC23*az)+ACC_Data.data.ACC20);
-	a->z = (float) ((ACC_Data.data.ACC31*ax)+(ACC_Data.data.ACC32*ay)+(ACC_Data.data.ACC33*az)+ACC_Data.data.ACC30);
-//	printf("\n Before %f,%f,%f\n\r",a->x,a->y,a->z);
-	Gx = (int)a->y; 	
-	Gy = (int)a->x;	
-	Gz = (int)a->z;
+	phi = atan2f(Gy,Gz);
+	sphi = sinf(phi);
+	cphi = cosf(phi);
+	Gz2 =  Gy*sphi + Gz*cphi;
+
+	if (Gz2!=0.0)
+		theta = atanf(-Gx / Gz2);
+	
+	*roll = atan2f(Gy, Gz) * RAD_TO_DEG;
+	*pitch = atan2f(-Gx, sqrt(Gy*Gy + Gz*Gz)) * RAD_TO_DEG;
+//	*roll = phi * RAD_TO_DEG;
+//	*pitch = theta * RAD_TO_DEG;
+	
 }
+
 
 /*-----------------------------------------------------------------------------
  *  Function:     update_magnetomer_calib_data
@@ -257,10 +265,17 @@ void calibrate_compass_acc(uint8_t Dev_Pos)
 	{
 		Lsm_Data_Ready = 0;
 		read_accelerometer_data();
-
-		Acc_Calib_Data1[Dev_Pos][0] += Gx;
-		Acc_Calib_Data1[Dev_Pos][1] += Gy;
-		Acc_Calib_Data1[Dev_Pos][2] += Gz;
+		
+		
+		acc_cal_samples[acc_count][0]  =Ax;
+		acc_cal_samples[acc_count][1]  =Ay;
+		acc_cal_samples[acc_count][2]  =Az;
+		acc_count++;
+		
+		//printf("--- Ax=%f, Ay=%f, Az=%f \n", (double)Ax, (double)Ay, (double)Az);
+		Acc_Calib_Data1[Dev_Pos][0] += (double)Ax;//add raw acceleromter values. 
+		Acc_Calib_Data1[Dev_Pos][1] += (double)Ay;
+		Acc_Calib_Data1[Dev_Pos][2] += (double)Az;
 		Acc_Calib_Read_Ctr[Dev_Pos] += 1;
 		Start_LSM();
 	}
@@ -270,7 +285,7 @@ void calibrate_compass_acc(uint8_t Dev_Pos)
 void Calib_Acc_Avg()
 {
 	uint8_t Dev_Pos=0;
-	for(Dev_Pos=0;Dev_Pos<6;Dev_Pos++)
+	for(Dev_Pos=0;Dev_Pos<NUM_ACC_CAL_POS;Dev_Pos++)
 	{
 		Acc_Calib1.Acc_Calib_Write_Buf[Dev_Pos][0] = 
 				(Acc_Calib_Data1[Dev_Pos][0]/Acc_Calib_Read_Ctr[Dev_Pos]);
@@ -285,27 +300,9 @@ void Calib_Acc_Avg()
 	}
 }
 
-void calib_file_check(void)
-{
-	MQX_FILE_PTR Ser_fd_ptr; 
-	char Ser_File_Name[60];
-
-	memset(Ser_File_Name,0x00,60);
-	strcpy(Ser_File_Name,"a:");	
-	strcat(Ser_File_Name,Serial_Numbr);
-	strcat(Ser_File_Name,"_Compass_Acc_Calib.txt");
-	
-	Ser_fd_ptr = fopen(Ser_File_Name, "r");
-	if (Ser_fd_ptr != NULL)
-	{
-		Calib_status[ACCELEROMETER_CALIB_2] = COMPLETED;
-		fclose(Ser_fd_ptr);
-	}
-	else
-	{
-		Calib_status[ACCELEROMETER_CALIB_2] = INCOMPLETE;
-	}
-}
+/*
+ * this wirtes the w matrix
+ */
 void Write_Calib_Acc_Dat()
 {
 	MQX_FILE_PTR Ser_fd_ptr; 
@@ -321,17 +318,15 @@ void Write_Calib_Acc_Dat()
 	{
 
 		uint8_t Dev_Pos=0;
-		for(Dev_Pos=0;Dev_Pos<6;Dev_Pos++)
+		for(Dev_Pos=0;Dev_Pos<NUM_ACC_CAL_POS;Dev_Pos++)
 		{
 			fprintf(Ser_fd_ptr, "%d\t",Acc_Calib1.Acc_Calib_Write_Buf[Dev_Pos][0]);
 			fprintf(Ser_fd_ptr, "%d\t",Acc_Calib1.Acc_Calib_Write_Buf[Dev_Pos][1]);
 			fprintf(Ser_fd_ptr, "%d\t",Acc_Calib1.Acc_Calib_Write_Buf[Dev_Pos][2]);
 			fprintf(Ser_fd_ptr, "%d\r\n",Acc_Calib1.Acc_Calib_Write_Buf[Dev_Pos][3]);
 		}
-		Calib_status[ACCELEROMETER_CALIB_2] = COMPLETED;
-		fclose(Ser_fd_ptr);	
+		fclose(Ser_fd_ptr);
 	}
-//	Write_Acc_Calib_Dat();
 }
 
 /*-----------------------------------------------------------------------------
@@ -756,15 +751,21 @@ void read_accelerometer_data(void)
 	lsm303_i2c_read_polled(Lsm303_fd, OUT_Y_H_A, &Lsm303_data_buffer[3], 1, 0);
 	lsm303_i2c_read_polled(Lsm303_fd, OUT_Z_L_A, &Lsm303_data_buffer[4], 1, 0);
 	lsm303_i2c_read_polled(Lsm303_fd, OUT_Z_H_A, &Lsm303_data_buffer[5], 1, 0);
-	Gx = (int_16) ((uint_16) Lsm303_data_buffer[1] << 8) + (uint_16) Lsm303_data_buffer[0];
-	Gy = (int_16) ((uint_16) Lsm303_data_buffer[3] << 8) + (uint_16) Lsm303_data_buffer[2];
-	Gz = (int_16) ((uint_16) Lsm303_data_buffer[5] << 8) + (uint_16) Lsm303_data_buffer[4];
-
+	Ax_raw = (int_16) ((uint_16) Lsm303_data_buffer[1] << 8) + (uint_16) Lsm303_data_buffer[0];
+	Ay_raw = (int_16) ((uint_16) Lsm303_data_buffer[3] << 8) + (uint_16) Lsm303_data_buffer[2];
+	Az_raw = (int_16) ((uint_16) Lsm303_data_buffer[5] << 8) + (uint_16) Lsm303_data_buffer[4];
+	
+	//printf("Ax=%d, Ay=%d, Az=%d \n", Ax_raw, Ay_raw, Az_raw);
 #if ENABLE_LSM303DLHC
-	Gx = (Gx >> 4);
-	Gy = (Gy >> 4);
-	Gz = (Gz >> 4);
+	Ax_raw = (Ax_raw >> 4);
+	Ay_raw = (Ay_raw >> 4);
+	Az_raw = (Az_raw >> 4);
 #endif
+	
+	Ax =  (float)Ax_raw;
+	Ay =  (float)Ay_raw;
+	Az =  (float)Az_raw;
+	//printf("Ax=%f, Ay=%f, Az=%f \n", Ax, Ay, Az);
 
 }
 
@@ -786,7 +787,7 @@ void read_magnetometer_data(void)
 	Bz = (int_16) ((uint_16) Lsm303_data_buffer[2] << 8) + (uint_16) Lsm303_data_buffer[3];
 	
 	if ((Bx & 0x0800) == 0x0800) Bx |= 0xF000;
-	if ((By & 0x0800) == 0x0800) By |= 0xF000;		
+	if ((By & 0x0800) == 0x0800) By |= 0xF000;	
 	if ((Bz & 0x0800) == 0x0800) Bz |= 0xF000;
 	
 #else if ENABLE_LSM303D	
@@ -1306,7 +1307,7 @@ void basicmagcalib(int *cBx, int *cBy, int *cBz)
   	  	  	  	 psi = atan2f((Bz.*sinf(phi)-By.*cosf(phi)),(Bx.*cosf(theta)+By.*sinf(theta).*sinf(phi)+Bz.*sinf(theta).*cosf(phi)));
  *  Return:      none
  -----------------------------------------------------------------------------*/
-void fusion6(int Gx, int Gy, int Gz, int Bx, int By, int Bz, float *Roll, float *Pitch, float *Yaw)
+void fusion6(float Gx, float Gy, float Gz, int Bx, int By, int Bz, float *Roll, float *Pitch, float *Yaw)
 {
 	float By2, Bz2, Gz2, Bx3; //Bz3;
 	float sphi, cphi, stheta, ctheta;
@@ -1367,87 +1368,6 @@ void Get_Lsm_Data()
 
 }
 
-
-/*-----------------------------------------------------------------------------
- *  Function:     Read_Acc_Calib_values_from_Sd_Card
- *  Brief:        Reads acc values from Sd Card
- *  Parameter:    none
- *  Return:       none
- -----------------------------------------------------------------------------*/
-uint8_t Read_Acc_Calib_values_from_Sd_Card()
-{
-	_mqx_int error_code;
-	MQX_FILE_PTR fd_ptr;
-	char Acc_Filename[30];
-	char acc_string[100];
-	char *temp_str;
-
-	// sprintf(filename,"");
-	error_code = ioctl(filesystem_handle, IO_IOCTL_CHANGE_CURRENT_DIR, (uint_32_ptr) "a:\\");
-	if(error_code==MQX_OK)
-		printf("\nCHANGED DIRECTORY TO a:\\");
-	else
-		printf("\nCHANGE DIRECTORY FAILED\n");
-
-	memset(Acc_Filename,0x00,30);
-	strcpy(Acc_Filename,"a:"); 
-	strcat(Acc_Filename,Serial_Numbr);
-	strcat(Acc_Filename,"_ACC_Values.txt");
-	// printf("\n\n %s", Acc_Filename);
-	fd_ptr = fopen(Acc_Filename, "r");
-	if (fd_ptr == NULL)
-	{
-		printf("\n ACC CALIB VALUE FILE NOT PRESENT!!! \n");
-		return 0;
-	}
-
-
-	// fseek(fd_ptr, strlen(acc_string)+1, IO_SEEK_SET);
-
-	fgets(acc_string,sizeof(acc_string),fd_ptr); /* read a line from a file */
-	if(strlen(acc_string)<2)
-		fgets(acc_string,sizeof(acc_string),fd_ptr); /* read a line from a file */
-	printf("\nSecond Row is %s\n",acc_string); //print the file contents on stdout.
-	ACC_Data.data.ACC11 = strtod(acc_string, &temp_str);
-	ACC_Data.data.ACC21 = strtod(temp_str,&temp_str);
-	ACC_Data.data.ACC31 = strtod(temp_str,NULL);
-	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC11, ACC_Data.data.ACC21, ACC_Data.data.ACC31);
-
-	fgets(acc_string,sizeof(acc_string),fd_ptr); /* read a line from a file */
-	if(strlen(acc_string)<2)
-	{
-		fgets(acc_string,sizeof(acc_string),fd_ptr); /* read a line from a file */
-	}
-	printf("\nThird Row is %s\n",acc_string); //print the file contents on stdout.
-	ACC_Data.data.ACC12 = strtod(acc_string, &temp_str);
-	ACC_Data.data.ACC22 = strtod(temp_str,&temp_str);
-	ACC_Data.data.ACC32 = strtod(temp_str,NULL);
-	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC12, ACC_Data.data.ACC22, ACC_Data.data.ACC32);
-
-	fgets(acc_string,sizeof(acc_string),fd_ptr); /* read a line from a file */
-	if(strlen(acc_string)<2)
-		fgets(acc_string,sizeof(acc_string),fd_ptr); /* read a line from a file */
-		printf("\n Fourth Row is %s\n",acc_string); //print the file contents on stdout.
-		ACC_Data.data.ACC13 = strtod(acc_string, &temp_str);
-		ACC_Data.data.ACC23 = strtod(temp_str,&temp_str);
-		ACC_Data.data.ACC33 = strtod(temp_str,NULL);
-		printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC13, ACC_Data.data.ACC23, ACC_Data.data.ACC33);
-		
-	fgets(acc_string,sizeof(acc_string),fd_ptr); // read a line from a file 
-	if(strlen(acc_string)<2)
-		fgets(acc_string,sizeof(acc_string),fd_ptr); /* read a line from a file */
-	printf("\nFirst Row is %s\n",acc_string); //print the file contents on stdout.
-	ACC_Data.data.ACC10 = strtod(acc_string, &temp_str);
-	ACC_Data.data.ACC20 = strtod(temp_str, &temp_str);
-	ACC_Data.data.ACC30 = strtod(temp_str,NULL);
-	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC10, ACC_Data.data.ACC20, ACC_Data.data.ACC30);
-		
-	fclose(fd_ptr);
-	Write_Acc_Calib_Dat();
-	//Read_Acc_Calib_Dat();
-	return 1;
-
-}
 /*-----------------------------------------------------------------------------
  *************************        END        **********************************
  -----------------------------------------------------------------------------*/

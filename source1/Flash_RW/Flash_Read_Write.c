@@ -193,7 +193,7 @@ void Check_Serial()
 	}
 	fclose(flash_file);
 	
-	if((buffer[0]=='S')&&(buffer[1]=='P')&&(buffer[2]=='1'))
+	if((buffer[0]=='S')&&(buffer[1]=='P')&&(buffer[2]=='2'))
 	{
 		buffer[14] = 0x00;
 		strcpy(Serial_Numbr,buffer);
@@ -420,7 +420,7 @@ uint8_t Read_Acc_Calib_Dat()
 	if (flash_file == NULL) 
 	{
 		printf("\nUnable to open file %s", FLASH_NAME);
-		return 0;
+		return 1;
 	}
 	else 
 	{
@@ -441,13 +441,12 @@ uint8_t Read_Acc_Calib_Dat()
 	fclose(flash_file);
 	printf("\nFlash Write function End.");
 	
-	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC11, ACC_Data.data.ACC21, ACC_Data.data.ACC31);
-	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC12, ACC_Data.data.ACC22, ACC_Data.data.ACC32);
-	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC13, ACC_Data.data.ACC23, ACC_Data.data.ACC33);
-	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC10, ACC_Data.data.ACC20, ACC_Data.data.ACC30);
-				
+	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC00, ACC_Data.data.ACC01, ACC_Data.data.ACC02);
+	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC10, ACC_Data.data.ACC11, ACC_Data.data.ACC12);
+	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC20, ACC_Data.data.ACC21, ACC_Data.data.ACC22);
+	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC30, ACC_Data.data.ACC31, ACC_Data.data.ACC32);
 	
-	return 1;
+	return 0;
 }
 
 
@@ -461,7 +460,7 @@ uint8_t Write_Acc_Calib_Dat()
 	{
 		/* Open the flash device */
 		flash_file = fopen(FLASH_NAME, NULL);
-		if (flash_file == NULL) 
+		if (flash_file == NULL)
 		{
 			printf("\nUnable to open file %s", FLASH_NAME);
 			return 0;

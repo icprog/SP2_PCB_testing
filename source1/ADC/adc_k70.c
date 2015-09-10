@@ -282,7 +282,7 @@ void ADC_deinit(void)
 			printf("\nros_sens1 close Error\n");
 		}
 	}
-#if ENABLE_ROS2	
+
 	if(ros_sens2  != NULL)
 	{    
 		if(MQX_OK != fclose(ros_sens2))
@@ -290,7 +290,6 @@ void ADC_deinit(void)
 			printf("\nros_sens2 close Error\n");
 		}
 	}
-#endif	
 
 	/**********************************De init Distance Sensor channel*************************************/
 	if(ir_sens != NULL)
@@ -535,14 +534,12 @@ void ADC_Init(void)
 		printf("ros_sens1 init failed\n");
 	}
 	
-#if ENABLE_ROS2	
 	//	printf("Opening Reflective Object sensor 2 channel  ...");
 	ros_sens2= fopen(ADC0 "three", (const char*)&ROS_2_para);
 	if(ros_sens2 == NULL)
 	{    
 		printf("ros_sens2 init failed\n");
 	}
-#endif
 	
 /***************Configuring Battery ADC pins*********************/ 
 	
@@ -621,17 +618,15 @@ void Stop_ADC(void)
 		printf("\nros_sens1 close Error\n");
 	}
 	
-#if ENABLE_ROS2		
 	if(MQX_OK==fclose(ros_sens2))
 	{
-		ros_sens1=NULL;
+		ros_sens2=NULL;
 		printf("\nros_sens2 closed successfully\n");
 	}
 	else
 	{
 		printf("\nros_sens2 close Error\n");
 	}
-#endif
 	
 	/***********************************************************************/
 	if(MQX_OK==fclose(ir_sens))

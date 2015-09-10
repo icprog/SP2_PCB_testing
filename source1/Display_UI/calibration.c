@@ -6,11 +6,14 @@
  */
 
 #include "common_headers.h"
+#include "calibration.h"
+#include "matrix_operations.h"
+#include <math.h>
+
 
 extern void Write_IRDMS_Data(void);
 extern void Write_Pressure_Data(void);
-extern void Write_ROS1_Data(void);
-extern void Write_ROS2_Data(void);
+extern void Write_ROS_Data(void);
 extern void Write_GPS_Data(uint_32  sec);
 extern void Write_MAG_Data(void);
 extern void Write_ACC_Data(void);
@@ -19,23 +22,26 @@ extern void Update_Calib_Buff();
 //This variable is incremented and decremented according to navigation key 
 volatile uint_8 IRDMS_Condition_selection = 0;
 volatile uint_8 Pressure_Condition_selection = 0;
-volatile uint_8 ROS1_Condition_selection = 0;
-volatile uint_8 ROS2_Condition_selection = 0;
+volatile uint_8 ROS_Condition_selection = 0;
 volatile uint_8 Accelerometer_Condition_selection = 0;
 volatile uint_8 Magnetometer_Condition_selection = 0;
 volatile uint_8 Acc_reading_status = 0;
+
+float cal_pitch;
+float rad_shift;
+float pitch_screen_down = 0; //initalize to some greater than pi
+float pitch_screen_up = 0;
+float pitch_screen_down45 = 0;
+float pitch_screen_up45 = 0;
+
 
 
 CalibTable IRDMS_Calib_Table[] = {
 
 		//  condition       min voltage,    max voltage	
-		{ 	"20 CM",      	2.40,        	2.60,	5.5,	INCOMPLETE }, 
-		{ 	"40 CM", 		1.45, 		 	1.65,	5.5,	INCOMPLETE }, 
-		{	"60 CM",    	0.95,   	 	1.15,	5.5,	INCOMPLETE }, 
-		{  	"100 CM",      	0.60,  			0.80,	5.5,	INCOMPLETE }, 
-		{   "  0 CM",   	0.30,         	3.30, 	5.5, 	INCOMPLETE },
+		{ 	"COVERED",      	1.2,        	1.4,	5.5,	INCOMPLETE }, 
+		{ 	"POLE LENGTH", 		0.3, 		 	0.6,	5.5,	INCOMPLETE }, 
 
-		//TODO:- Change NUM_OF_IRDMS_CONDITION in calib.h
 };
 
 CalibTable Pressure_Calib_Table[] = {
@@ -69,9 +75,9 @@ CalibTable Accelerometer_Calib_Table[] = {
 		
 		//  condition   min voltage,    max voltage	
 		{ 	"0°",      	-1.0,  			1.0,	180.0,	INCOMPLETE }, 
-		{ 	"30°", 		29.0,  			31.0,	180.0,	INCOMPLETE }, 
-		{ 	"60°",      59.0,  			61.0,	180.0,	INCOMPLETE }, 
-		{ 	"90°", 		89.0,  			91.0,	180.0,	INCOMPLETE }, 
+		{ 	"20°", 		29.0,  			31.0,	180.0,	INCOMPLETE }, 
+		{ 	"40°",      59.0,  			61.0,	180.0,	INCOMPLETE }, 
+		{ 	"60°", 		89.0,  			91.0,	180.0,	INCOMPLETE }, 
 
 //#define NUM_OF_ACC_CONDITION	(4)
 
@@ -89,6 +95,285 @@ CalibTable Magnetometer_Calib_Table[] = {
 
 };
 
+/*
+ * this function manually transforms the raw acceleration by -15 degrees to compensate 
+ * for the offset of the board and the pole. In this system, the positive yaxis point to left of the device looking at the screen
+ * the positive x axis point down the pole, and the positive z axis is pointing into the screen. 
+ */
+void transform_raw_acc_manual(void)
+{
+	
+	//float deg2rad = 3.14159/180;
+	//float deg_shift = -13.5;
+	//float rad_shift = deg_shift*deg2rad;
+	
+	//get raw acc data
+	read_accelerometer_data();
+	//printf("Ax=%f, Ay=%f, Az=%f", Ax, Ay, Az);
+	struct matrix_struct x;
+	x.m = 3;
+	x.n = 1;
+	x.mat[0][0] = Ax;
+	x.mat[1][0] = Ay;
+	x.mat[2][0] = Az;
+	
+	//create a rotation matrix to rotate around y axis byy 15 degrees to account for the PCB offset to the pole
+	struct matrix_struct R;
+	R.m = 3;
+	R.n = 3;
+	R.mat[0][0] = cosf(rad_shift);
+	R.mat[0][1] = 0;
+	R.mat[0][2] = -sinf(rad_shift);
+	R.mat[1][0] = 0;
+	R.mat[1][1] = 1;
+	R.mat[1][2] = 0;
+	R.mat[2][0] = sin(rad_shift);
+	R.mat[2][1] = 0;
+	R.mat[2][2] = cosf(rad_shift);
+	
+	struct matrix_struct x_prime;
+	
+	m_mult(&R, &x, &x_prime);
+	Gx = x_prime.mat[0][0];
+	Gy = x_prime.mat[1][0];
+	Gz = x_prime.mat[2][0];
+	
+}
+void transform_raw_acc(void)
+{
+	double ax,ay,az;
+	read_accelerometer_data();
+	
+	printf("Ax=%f, Ay=%f, Az=%f", Ax, Ay, Az);
+	ax = (double) Ax;
+	ay = (double) Ay;
+	az = (double) Az;
+
+	Gx = (float) ((ACC_Data.data.ACC00*ax)+(ACC_Data.data.ACC10*ay)+(ACC_Data.data.ACC20*az)+ACC_Data.data.ACC30);
+	Gy = (float) ((ACC_Data.data.ACC01*ax)+(ACC_Data.data.ACC11*ay)+(ACC_Data.data.ACC21*az)+ACC_Data.data.ACC31);
+	Gz = (float) ((ACC_Data.data.ACC02*ax)+(ACC_Data.data.ACC12*ay)+(ACC_Data.data.ACC22*az)+ACC_Data.data.ACC32);
+}
+
+
+void acc_transform_wrapper2(int pos_num)
+{
+	
+//	//get raw acc values and pitch calcuations
+//	float x_vec1 = (float)Acc_Calib1.Acc_Calib_Write_Buf[0][0];
+//	float y_vec1 = (float)Acc_Calib1.Acc_Calib_Write_Buf[0][1];
+//	float z_vec1 = (float)Acc_Calib1.Acc_Calib_Write_Buf[0][2];
+//	float pitch1 = atan2f(-x_vec1, sqrt(y_vec1*y_vec1 + z_vec1*z_vec1));
+//	printf("x: %f, y: %f, z:%f \n", x_vec1, y_vec1, z_vec1);
+//	
+//	float x_vec2 = (float)Acc_Calib1.Acc_Calib_Write_Buf[1][0];
+//	float y_vec2 = (float)Acc_Calib1.Acc_Calib_Write_Buf[1][1];
+//	float z_vec2 = (float)Acc_Calib1.Acc_Calib_Write_Buf[1][2];
+//	float pitch2 = atan2f(-x_vec2, sqrt(y_vec2*y_vec2 + z_vec2*z_vec2));
+//	printf("x: %f, y: %f, z:%f \n", x_vec2, y_vec2, z_vec2);
+	
+//	printf("Acc Count: %d \n", acc_count);
+//	for(int i = 0; i < acc_count; i++)
+//	{
+//		
+//		printf("Stored Ax=%f, Ay=%f, Az=%f \n", acc_cal_samples[i][0], acc_cal_samples[i][1], acc_cal_samples[i][2]);
+//	}
+	
+
+	double xsum1 = 0, ysum1 = 0, zsum1 = 0;
+	for(int i = 0; i < acc_count; i++)
+	{
+		xsum1 += acc_cal_samples[i][0];
+		ysum1 += acc_cal_samples[i][1];
+		zsum1 += acc_cal_samples[i][2];
+	}
+	float xvec1 = xsum1/acc_count;
+	float yvec1 = ysum1/acc_count;
+	float zvec1 = zsum1/acc_count;
+	cal_pitch = atan2f(-xvec1, sqrt(yvec1*yvec1 + zvec1*zvec1));
+	
+	printf("x: %f, y: %f, z:%f \n", xvec1, yvec1, zvec1);
+	printf("pitch = %f \n", cal_pitch);
+	acc_count = 0;
+	
+	if(pos_num == 0)
+	{
+		pitch_screen_down = cal_pitch;
+	}
+	else if(pos_num == 1)
+	{
+		//pitch_screen_up = cal_pitch - .78539;
+		pitch_screen_up = -cal_pitch;
+	}
+	else if(pos_num == 2)
+	{
+		//pitch_screen_up = cal_pitch - .78539;
+		pitch_screen_down45 = -(cal_pitch - .78539);
+	}
+	else if(pos_num == 3)
+	{
+		//pitch_screen_up = cal_pitch - .78539;
+		pitch_screen_up45 = cal_pitch - 0.78539;
+		rad_shift = -(pitch_screen_down + pitch_screen_up + pitch_screen_down45 + pitch_screen_up45)/4;
+		printf("pitch down = %f, pitch up = %f, pitch down 45= %f, pitch up 45= %f, rad_shift = %f \n", pitch_screen_down, pitch_screen_up, pitch_screen_down45, pitch_screen_up45,rad_shift);
+	}
+	
+		}
+void acc_transform_wrapper(void)
+{
+	printf("acc_tranform_wrapper \n");
+	float row_sq_sums[3] = {0, 0, 0};
+	//generate w matrix from saved accel values
+	struct matrix_struct w;
+	w.m = 6;
+	w.n = 4;
+	for(int i = 0; i < w.m; i++)
+	{
+		for(int j = 0; j < w.n; j++)
+		{
+			w.mat[i][j] = (float)Acc_Calib1.Acc_Calib_Write_Buf[i][j];
+			row_sq_sums[i] += w.mat[i][j]*w.mat[i][j];
+		}
+	}
+	
+//	//normalize w matrix
+//	for(int i = 0; i < w.m; i++)
+//	{
+//		for(int j = 0; j < w.n; j++)
+//		{
+//			w.mat[i][j] = w.mat[i][j]/sqrt(row_sq_sums[i]);
+//		}
+//	}
+	
+	//generate known Y matrix
+	struct matrix_struct Y;
+	Y.m = 6;
+	Y.n = 3;
+	//screen down = -z
+	Y.mat[0][0] = 0;
+	Y.mat[0][1] = 0;
+	Y.mat[0][2] = -1;
+	//screen up = +z
+	Y.mat[1][0] = 0;
+	Y.mat[1][1] = 0;
+	Y.mat[1][2] = 1;
+	//tip down = +x
+	Y.mat[2][0] = 1;
+	Y.mat[2][1] = 0;
+	Y.mat[2][2] = 0;
+	//tip up = -x
+	Y.mat[3][0] = -1;
+	Y.mat[3][1] = 0;
+	Y.mat[3][2] = 0;
+	//screen in = +y
+	Y.mat[4][0] = 0;
+	Y.mat[4][1] = 1;
+	Y.mat[4][2] = 0;
+	//screen out = -y
+	Y.mat[5][0] = 0;
+	Y.mat[5][1] = -1;
+	Y.mat[5][2] = 0;
+	
+	struct matrix_struct acc_transform_matrix;
+	calculate_acc_transform(&w, &Y, &acc_transform_matrix);
+	
+	//populate the ACC data structure //TODO this structure is a bit bulky
+	ACC_Data.data.ACC00 = acc_transform_matrix.mat[0][0];
+	ACC_Data.data.ACC01 = acc_transform_matrix.mat[0][1];
+	ACC_Data.data.ACC02 = acc_transform_matrix.mat[0][2];
+	ACC_Data.data.ACC10 = acc_transform_matrix.mat[1][0];
+	ACC_Data.data.ACC11 = acc_transform_matrix.mat[1][1];
+	ACC_Data.data.ACC12 = acc_transform_matrix.mat[1][2];
+	ACC_Data.data.ACC20 = acc_transform_matrix.mat[2][0];
+	ACC_Data.data.ACC21 = acc_transform_matrix.mat[2][1];
+	ACC_Data.data.ACC22 = acc_transform_matrix.mat[2][2];
+	ACC_Data.data.ACC30 = acc_transform_matrix.mat[3][0];
+	ACC_Data.data.ACC31 = acc_transform_matrix.mat[3][1];
+	ACC_Data.data.ACC32 = acc_transform_matrix.mat[3][2];
+	
+	Write_Acc_Calib_Dat(); //write ACC values to flash
+	printf("accelration calibration complete \n");
+	
+}
+
+/*
+ * This function uses least squares to solve Y = w*X
+ * X = [w^T*w]^-1 *w^T*Y
+ */
+void calculate_acc_transform(struct matrix_struct * w, struct matrix_struct * Y, struct matrix_struct * X)
+{
+	X->m = 4;
+	X->n = 3;
+	printf("w: \n");
+	for(int i = 0; i < w->m; i++)
+	{
+		for(int j = 0; j < w->n; j++)
+		{
+			printf("%f ", w->mat[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+	struct matrix_struct wt;
+	transpose(w, &wt);	
+	printf("wt: \n");
+	for(int i = 0; i < wt.m; i++)
+	{
+		for(int j = 0; j < wt.n; j++)
+		{
+			printf("%f ", wt.mat[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+	struct matrix_struct wtw;
+	m_mult(&wt, w, &wtw);
+	printf("w^T * w: \n");
+	for(int i = 0; i < wtw.m; i++)
+	{
+		for(int j = 0; j < wtw.n; j++)
+		{
+			printf("%f ", wtw.mat[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+	struct matrix_struct inv_wtw;
+	inverse(&wtw, &inv_wtw);
+	printf("inv(w^T * w): \n");
+	for(int i = 0; i < inv_wtw.m; i++)
+	{
+		for(int j = 0; j < inv_wtw.n; j++)
+		{
+			printf("%20.12f ", inv_wtw.mat[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+	struct matrix_struct inv_wtw_wt;
+	m_mult(&inv_wtw, &wt, &inv_wtw_wt);
+	printf("inv(w' * w)*w': \n");
+	for(int i = 0; i < inv_wtw_wt.m; i++)
+	{
+		for(int j = 0; j < inv_wtw_wt.n; j++)
+		{
+			printf("%20.12f ", inv_wtw_wt.mat[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+	m_mult(&inv_wtw_wt, Y, X);
+	
+	printf("X matrix (ACC constants): \n");
+	for(int i = 0; i < X->m; i++)
+	{
+		for(int j = 0; j < X->n; j++)
+		{
+			printf("%20.12f ", X->mat[i][j]);
+		}
+		printf("\n");
+	}
+	
+}
 
 /*-----------------------------------------------------------------------------
  *  Function:     calibrate_IRDMS
@@ -233,37 +518,58 @@ uint_8 calibrate_Pressure_Sensor(void)
  *  Parameter:    None
  *  Return:       None
 -----------------------------------------------------------------------------*/
-uint_8 calibrate_ROS1_Sensor(void)
+uint_8 calibrate_ROS_Sensors(void)
 {	
-	uint_32 ROS_result = 0;
-	uint_32 sample_count = 0;
+	uint_32 ROS1_result = 0;
+	float 	ROS1_voltage = 0.0;
+	uint_32 ROS2_result = 0;
+	float 	ROS2_voltage = 0.0;
+	uint_32 sample_count1 = 0;
+	uint_32 sample_count2 = 0;
 	ADC_RESULT_STRUCT adc_out;
-	float 	ROS_voltage = 0.0;
-	
-	ui_timer_start(500);
+	boolean ros1_condition;
+	boolean ros2_condition;
 
+	
+	//collect ROS samples and calculate voltage
+	ui_timer_start(500);
 	while(Check_UI_Timer_Timeout() != TIME_OUT)
 	{
 		if (read(ros_sens1, &adc_out,sizeof(adc_out)))
 		{
-			ROS_result = ROS_result + adc_out.result;
-			sample_count++;
+			ROS1_result = ROS1_result + adc_out.result;
+			sample_count1++;
+		}
+		if (read(ros_sens2, &adc_out,sizeof(adc_out)))
+		{
+			ROS2_result = ROS2_result + adc_out.result;
+			sample_count2++;
 		}
 	}
-	ROS_result  = (ROS_result /sample_count);
-	ROS_voltage = (ROS_result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
-	
+	ROS1_result  = (ROS1_result /sample_count1);
+	ROS1_voltage = (ROS1_result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
+	ROS2_result  = (ROS2_result /sample_count2);
+	ROS2_voltage = (ROS2_result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
 
-	if((ROS_voltage >= ROS1_Calib_Table[ROS1_Condition_selection].min_voltage) && 
-			(ROS_voltage <= ROS1_Calib_Table[ROS1_Condition_selection].max_voltage))
+	//TODO: this function could be made smarter by seperating failing of ROS1 and ROS2 independently
+    ros1_condition = (ROS1_voltage >= ROS1_Calib_Table[ROS_Condition_selection].min_voltage) && 
+			(ROS1_voltage <= ROS1_Calib_Table[ROS_Condition_selection].max_voltage);
+	ros2_condition = (ROS2_voltage >= ROS2_Calib_Table[ROS_Condition_selection].min_voltage) && 
+			(ROS2_voltage <= ROS2_Calib_Table[ROS_Condition_selection].max_voltage);
+	printf("ROS condition: %d \n", ROS_Condition_selection);
+	printf("max: %f, min: %f \n", ROS1_Calib_Table[ROS_Condition_selection].max_voltage, ROS1_Calib_Table[ROS_Condition_selection].min_voltage);
+	printf("ros1 cond: %d, ros2 cond: %d \n", ros1_condition, ros2_condition);
+	if(ros1_condition && ros2_condition)
 	{
-		ROS1_Calib_Table[ROS1_Condition_selection].curr_voltage = ROS_voltage;
-		ROS1_Calib_Table[ROS1_Condition_selection].Calib_status = COMPLETED;
-		display_ROS1_Calibration();
+		ROS1_Calib_Table[ROS_Condition_selection].curr_voltage = ROS1_voltage;
+		ROS1_Calib_Table[ROS_Condition_selection].Calib_status = COMPLETED;
+		ROS2_Calib_Table[ROS_Condition_selection].curr_voltage = ROS2_voltage;
+		ROS2_Calib_Table[ROS_Condition_selection].Calib_status = COMPLETED;
+		display_ROS_Calibration();
 		
 		Time_Delay_Sleep(2500);
-		ROS1_Condition_selection++;
-		ROS1_Condition_selection = ROS1_Condition_selection % NUM_OF_ROS_CONDITION;	
+		ROS_Condition_selection++;
+		ROS_Condition_selection = ROS_Condition_selection % NUM_OF_ROS_CONDITION;	
 		
 		for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
 		{
@@ -271,59 +577,6 @@ uint_8 calibrate_ROS1_Sensor(void)
 			{
 				return INCOMPLETE;
 			}
-		}
-					
-		return COMPLETED;	
-	}
-	else
-	{
-		ROS1_Calib_Table[ROS1_Condition_selection].Calib_status = INCOMPLETE;
-//		ROS_Calib_Table[ROS_Condition_selection].curr_voltage = 5.5;
-		return OUT_OF_RANGE;
-	}
-	
-}
-
-/*-----------------------------------------------------------------------------
- *  Function:     calibrate_IRDMS
- *  Brief:        calibrate_IRDMS. 
- *  Parameter:    None
- *  Return:       None
------------------------------------------------------------------------------*/
-uint_8 calibrate_ROS2_Sensor(void)
-{	
-	uint_32 ROS_result = 0;
-	uint_32 sample_count = 0;
-	ADC_RESULT_STRUCT adc_out;
-	float 	ROS_voltage = 0.0;
-	
-	ui_timer_start(500);
-
-	while(Check_UI_Timer_Timeout() != TIME_OUT)
-	{
-		if (read(ros_sens1, &adc_out,sizeof(adc_out)))
-		{
-			ROS_result = ROS_result + adc_out.result;
-			sample_count++;
-		}
-	}
-	ROS_result  = (ROS_result /sample_count);
-	ROS_voltage = (ROS_result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
-	
-
-	if((ROS_voltage >= ROS2_Calib_Table[ROS2_Condition_selection].min_voltage) && 
-			(ROS_voltage <= ROS2_Calib_Table[ROS2_Condition_selection].max_voltage))
-	{
-		ROS2_Calib_Table[ROS2_Condition_selection].curr_voltage = ROS_voltage;
-		ROS2_Calib_Table[ROS2_Condition_selection].Calib_status = COMPLETED;
-		display_ROS2_Calibration();
-		
-		Time_Delay_Sleep(2500);
-		ROS2_Condition_selection++;
-		ROS2_Condition_selection = ROS2_Condition_selection % NUM_OF_ROS_CONDITION;	
-		
-		for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
-		{
 			if(ROS2_Calib_Table[i].Calib_status != COMPLETED)
 			{
 				return INCOMPLETE;
@@ -334,11 +587,61 @@ uint_8 calibrate_ROS2_Sensor(void)
 	}
 	else
 	{
-		ROS2_Calib_Table[ROS2_Condition_selection].Calib_status = INCOMPLETE;
+		ROS1_Calib_Table[ROS_Condition_selection].Calib_status = INCOMPLETE;
+		ROS2_Calib_Table[ROS_Condition_selection].Calib_status = INCOMPLETE;
 //		ROS_Calib_Table[ROS_Condition_selection].curr_voltage = 5.5;
 		return OUT_OF_RANGE;
 	}
 	
+}
+
+
+uint_8 calibrate_Accelerometer2(void)
+{	
+	float pitch, roll;
+	float slope;
+	float angle_sum = 0.0;
+	int sample_count = 0;
+	ui_timer_start(500);
+	while(Check_UI_Timer_Timeout() != TIME_OUT)
+	{
+		read_accelerometer_data();
+		get_euler_angles(&roll, &pitch);
+		angle_sum += pitch;
+		sample_count++;			
+	}
+	
+	slope = angle_sum/sample_count;
+	printf("sum= %f, count=%d, slope=%f \n", angle_sum, sample_count, slope);
+	if((slope >= Accelerometer_Calib_Table[Accelerometer_Condition_selection].min_voltage) && 
+			(slope <= Accelerometer_Calib_Table[Accelerometer_Condition_selection].max_voltage))
+	{
+		Accelerometer_Calib_Table[Accelerometer_Condition_selection].curr_voltage = slope;
+		Accelerometer_Calib_Table[Accelerometer_Condition_selection].Calib_status = COMPLETED;
+		Acc_reading_status = 1;
+		display_Accelerometer_Calibration();
+		
+		Time_Delay_Sleep(2500);
+		Accelerometer_Condition_selection++;
+		Accelerometer_Condition_selection = Accelerometer_Condition_selection % NUM_OF_ACC_CONDITION;	
+		
+		for(int i =0; i < NUM_OF_ACC_CONDITION; i++)
+		{
+			if(Accelerometer_Calib_Table[i].Calib_status != COMPLETED)
+			{
+				return INCOMPLETE;
+			}
+		}
+					
+		return COMPLETED;	
+	}
+	else
+	{
+		printf("\nSlope %f\n", slope);
+		Accelerometer_Calib_Table[Accelerometer_Condition_selection].Calib_status = INCOMPLETE;
+//		Accelerometer_Calib_Table[Accelerometer_Condition_selection].curr_voltage = 180.0;
+		return OUT_OF_RANGE;
+	}
 }
 /*-----------------------------------------------------------------------------
  *  Function:     calibrate_IRDMS
@@ -625,59 +928,38 @@ void Write_Pressure_Data(void)
 	}
 }
 
-void Write_ROS1_Data(void)
+void Write_ROS_Data(void)
 {
-	FLOAT_TO_CHAR conv;
+	FLOAT_TO_CHAR ROS1_conv;
+	FLOAT_TO_CHAR ROS2_conv;
 	MQX_FILE_PTR Ser_fd_ptr; 
 	char Ser_File_Name[50];
 	char Data_Buff[30];
 
 	memset(Ser_File_Name,0x00,50);
-	strcpy(Ser_File_Name,"a:");	
+	strcpy(Ser_File_Name,"a:");
 	strcat(Ser_File_Name,Serial_Numbr);
-	strcat(Ser_File_Name,"_ROS1_Calib.txt");
+	strcat(Ser_File_Name,"_ROS_Calib.txt");
 
 	Ser_fd_ptr = fopen(Ser_File_Name, "w");
 	if (Ser_fd_ptr != NULL)
 	{
 		for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
 		{	
-			conv.var_float	= ROS1_Calib_Table[i].curr_voltage;
-			memcpy(&Data_Buff[i*4],conv.var_char_float,4);
+			ROS1_conv.var_float	= ROS1_Calib_Table[i].curr_voltage;
+			ROS2_conv.var_float	= ROS2_Calib_Table[i].curr_voltage;
+
+			memcpy(&Data_Buff[(i*4)*2],ROS1_conv.var_char_float,4);
+			memcpy(&Data_Buff[(i*4)*2 + 4],ROS2_conv.var_char_float,4);
+
 //			Write_Calib(conv.var_char_float,ROS_ADDR_LOC,4);
-			fprintf(Ser_fd_ptr, "%s = ",ROS1_Calib_Table[i].Calib_condition);
+			fprintf(Ser_fd_ptr, "ROS1 %s = ",ROS1_Calib_Table[i].Calib_condition);
 			fprintf(Ser_fd_ptr, "%f\n",ROS1_Calib_Table[i].curr_voltage);
-		}
-		memcpy(&Calib_Flash_Buf[ROS_1*20],Data_Buff,4*NUM_OF_ROS_CONDITION);
-		Write_All_Calib_Dat();
-//		Write_Calib(Data_Buff,ROS_ADDR_LOC,4*NUM_OF_ROS_CONDITION);
-		fclose(Ser_fd_ptr);	
-	}
-}
-void Write_ROS2_Data(void)
-{
-	FLOAT_TO_CHAR conv;
-	MQX_FILE_PTR Ser_fd_ptr; 
-	char Ser_File_Name[50];
-	char Data_Buff[30];
-
-	memset(Ser_File_Name,0x00,50);
-	strcpy(Ser_File_Name,"a:");	
-	strcat(Ser_File_Name,Serial_Numbr);
-	strcat(Ser_File_Name,"_ROS2_Calib.txt");
-
-	Ser_fd_ptr = fopen(Ser_File_Name, "w");
-	if (Ser_fd_ptr != NULL)
-	{
-		for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
-		{	
-			conv.var_float	= ROS2_Calib_Table[i].curr_voltage;
-			memcpy(&Data_Buff[i*4],conv.var_char_float,4);
-//			Write_Calib(conv.var_char_float,ROS_ADDR_LOC,4);
-			fprintf(Ser_fd_ptr, "%s = ",ROS2_Calib_Table[i].Calib_condition);
+			fprintf(Ser_fd_ptr, "ROS2 %s = ",ROS2_Calib_Table[i].Calib_condition);
 			fprintf(Ser_fd_ptr, "%f\n",ROS2_Calib_Table[i].curr_voltage);
 		}
-		memcpy(&Calib_Flash_Buf[ROS_2*20],Data_Buff,4*NUM_OF_ROS_CONDITION);
+		memcpy(&Calib_Flash_Buf[ROS*20],Data_Buff,4*2*NUM_OF_ROS_CONDITION); //the * 2 is for 2 sensors
+
 		Write_All_Calib_Dat();
 //		Write_Calib(Data_Buff,ROS_ADDR_LOC,4*NUM_OF_ROS_CONDITION);
 		fclose(Ser_fd_ptr);	
@@ -812,36 +1094,21 @@ void Update_Calib_Buff()
 	// Reading ROS_ADDR_LOC data from flash
 //	Read_Calib(Data_Buff,ROS_ADDR_LOC,4*NUM_OF_ROS_CONDITION);
 	
-	if((Calib_Flash_Buf[ROS_1*20]==0xFF)&&(Calib_Flash_Buf[(ROS_1*20)+1]==0xFF)&&
-	   (Calib_Flash_Buf[(ROS_1*20)+2]==0xFF)&&(Calib_Flash_Buf[(ROS_1*20)+3]==0xFF))
+	if((Calib_Flash_Buf[ROS*20]==0xFF)&&(Calib_Flash_Buf[(ROS*20)+1]==0xFF)&&
+	   (Calib_Flash_Buf[(ROS*20)+2]==0xFF)&&(Calib_Flash_Buf[(ROS*20)+3]==0xFF))
 	{
 		// no data in flash
 	}
 	else
 	{
 		// setting status
-		memcpy(Data_Buff,&Calib_Flash_Buf[ROS_1*20],4*NUM_OF_ROS_CONDITION);
-		Calib_status[ROS1_CALIB] = 1;
+		memcpy(Data_Buff,&Calib_Flash_Buf[ROS*20],4*2*NUM_OF_ROS_CONDITION); //the * 2 is for 2 sensors
+		Calib_status[ROS_CALIB] = 1;
 		for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
 		{	
-			memcpy(conv.var_char_float,&Data_Buff[i*4],4);
+			memcpy(conv.var_char_float,&Data_Buff[(i*4)*2],4);
 			ROS1_Calib_Table[i].curr_voltage = conv.var_float;
-		}
-	}
-	
-	if((Calib_Flash_Buf[ROS_2*20]==0xFF)&&(Calib_Flash_Buf[(ROS_2*20)+1]==0xFF)&&
-	   (Calib_Flash_Buf[(ROS_2*20)+2]==0xFF)&&(Calib_Flash_Buf[(ROS_2*20)+3]==0xFF))
-	{
-		// no data in flash
-	}
-	else
-	{
-		// setting status
-		memcpy(Data_Buff,&Calib_Flash_Buf[ROS_2*20],4*NUM_OF_ROS_CONDITION);
-		Calib_status[ROS2_CALIB] = 1;
-		for(int i =0; i < NUM_OF_ROS_CONDITION; i++)
-		{	
-			memcpy(conv.var_char_float,&Data_Buff[i*4],4);
+			memcpy(conv.var_char_float,&Data_Buff[(i*4)*2 + 4],4);
 			ROS2_Calib_Table[i].curr_voltage = conv.var_float;
 		}
 	}
