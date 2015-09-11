@@ -60,6 +60,19 @@ int acc_count = 0;
 
 ACC_Values ACC_Data;
 
+
+static int Bxmin = MAGMAXINT,  Bymin = MAGMAXINT,  Bzmin = MAGMAXINT;
+static int Bxmax = -MAGMAXINT, Bymax = -MAGMAXINT, Bzmax = -MAGMAXINT;
+static int Bxofs=0, Byofs=0, Bzofs=0; // offset: (max+min)/2
+static int Bxrange2=MAGRANGE, Byrange2=MAGRANGE, Bzrange2=MAGRANGE; // half range: (max-min)/2
+
+int Bx,By,Bz, final_yaw, final_roll;
+float Roll,Pitch,Yaw;
+float Gx, Gy, Gz;
+
+uint8_t calib_count =100;
+uint8_t Magnetometer_Calib_process=1;
+
 //double ACC11 = 0.000270374561242, ACC21 = 0.000001144176519, ACC31 = -0.000002550322889 , ACC12 = -0.000005367887200, ACC22 = -0.000264800091331, ACC32 = -0.000050200582977,ACC13 = 0.000004062177450, ACC23 = -0.000055360303431, ACC33 = 0.000272613670699,ACC10 = 0.028432111363023, ACC20 = 0.013558885443338 , ACC30 = -0.064402353662534;
 //ACC_Values ACC_Data;
 //uchar_ptr Lsm303_buffer;
@@ -89,18 +102,6 @@ extern void Write_Calib_Acc_Dat();
 extern void Calib_Acc_Avg();
 extern void calibrate_compass_acc(uint8_t Dev_Pos);
 extern void Acc_calib_Buff_Clear();
-
-static int Bxmin = MAGMAXINT,  Bymin = MAGMAXINT,  Bzmin = MAGMAXINT;
-static int Bxmax = -MAGMAXINT, Bymax = -MAGMAXINT, Bzmax = -MAGMAXINT;
-static int Bxofs=0, Byofs=0, Bzofs=0; // offset: (max+min)/2
-static int Bxrange2=MAGRANGE, Byrange2=MAGRANGE, Bzrange2=MAGRANGE; // half range: (max-min)/2
-
-int Bx,By,Bz, final_yaw, final_roll;
-float Roll,Pitch,Yaw;
-float Gx, Gy, Gz;
-
-uint8_t calib_count =100;
-uint8_t Magnetometer_Calib_process=1;
 
 void get_euler_angles(float *roll, float *pitch)
 {

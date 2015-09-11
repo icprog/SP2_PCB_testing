@@ -215,6 +215,11 @@ void acc_transform_wrapper2(int pos_num)
 		pitch_screen_up45 = cal_pitch - 0.78539;
 		rad_shift = -(pitch_screen_down + pitch_screen_up + pitch_screen_down45 + pitch_screen_up45)/4;
 		printf("pitch down = %f, pitch up = %f, pitch down 45= %f, pitch up 45= %f, rad_shift = %f \n", pitch_screen_down, pitch_screen_up, pitch_screen_down45, pitch_screen_up45,rad_shift);
+	
+		ACC_Data.data.ACC00 = (double)rad_shift; //write rad shift to ACC00 so it will be written to flash and transfered to firmware after cal
+		Write_Acc_Calib_Dat(); //write ACC(rad_shift) values to flash
+		printf("accelration calibration complete \n");
+	
 	}
 	
 		}

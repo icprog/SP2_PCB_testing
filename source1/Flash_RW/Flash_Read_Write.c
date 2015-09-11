@@ -439,6 +439,8 @@ uint8_t Read_Acc_Calib_Dat()
 		printf("\nERROR! Could not read from flash. Exiting...");
 	}
 	fclose(flash_file);
+	
+	
 	printf("\nFlash Write function End.");
 	
 	printf("\nDouble Values are  \n%0.15f \n%0.15f \n%0.15f\n", ACC_Data.data.ACC00, ACC_Data.data.ACC01, ACC_Data.data.ACC02);
