@@ -123,6 +123,7 @@ extern TEST_COUNT_FLASH Test_Count_Flash;
 #define TID_BAT				0x22000
 #define ACC_CALIB_SECTOR	0x23000
 #define DFU_SECTOR			0x24000
+#define STRING_SECTOR		0x25000
 
 //#define TEST_LOW_POWER
 #define AUTOMATE_TEST 0

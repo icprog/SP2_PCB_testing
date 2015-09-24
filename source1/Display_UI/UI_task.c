@@ -12,6 +12,7 @@
 
 #include "common_headers.h"
 #include "matrix_operations.h"
+#include "sp2_string.h"
 
 TEST_COUNT_FLASH Test_Count_Flash;
 
@@ -134,6 +135,9 @@ void UI_Task(uint_32 )
 
 
 	Check_Serial();
+	
+	//Write Language table to flash
+	uint8_t string_status = Write_Strings();
 
 
 	Read_calib_data("a:IRDMS_calib_data.txt",&IRDMS_Calib_Table);

@@ -6,8 +6,9 @@
  */
 
 #include "common_headers.h"
+#include "sp2_string.h"
 MQX_FILE_PTR   flash_file;
-
+extern uint8_t Write_Strings(void);
 extern void Write_Flash_DFU();
 extern void Check_Serial();
 char Serial_Numbr[15];
@@ -16,6 +17,72 @@ extern uint8_t Write_All_Calib_Dat();
 extern uint8_t Read_All_Calib_Dat();
 extern uint8_t Write_Acc_Calib_Dat();
 
+uint8_t Write_Strings(void)
+{
+	uint_32 ioctl_param;
+	uint8_t err_ctr=0;
+	while(1)
+	{
+		/* Open the flash device */
+		flash_file = fopen(FLASH_NAME, NULL);
+		if (flash_file == NULL) 
+		{
+			printf("\nUnable to open file %s", FLASH_NAME);
+			return 0;
+		}
+		else 
+		{
+			printf("\nFlash file %s opened", FLASH_NAME);
+		}
+	
+		/* Get the size of the flash file */
+		fseek(flash_file, STRING_SECTOR, IO_SEEK_SET);
+	
+		/* Disable sector cache */
+		ioctl(flash_file, FLASH_IOCTL_ENABLE_SECTOR_CACHE, NULL);
+		printf("\nFlash sector cache enabled.");
+	
+		/* Unprotecting the the FLASH might be required */
+		ioctl_param = 0;
+		ioctl(flash_file, FLASH_IOCTL_WRITE_PROTECT, &ioctl_param);
+	
+		_ICACHE_DISABLE();
+		ioctl(flash_file, FLASH_IOCTL_ERASE_SECTOR, NULL);
+		_ICACHE_DISABLE();
+		//get size of the array to be written
+		int string_struct_size = getStringStructSize();
+		printf("string struct size = %d", string_struct_size);
+		
+		if (string_struct_size != write(flash_file, string_array, string_struct_size)) 
+		{
+			printf("\nError writing to the file. Error code: %d", _io_ferror(flash_file));
+			err_ctr++;
+			if(err_ctr>=5)
+			{
+				printf("Flash Memory Corrupted....\n");
+				_ICACHE_DISABLE();
+				ioctl(flash_file, FLASH_IOCTL_ERASE_SECTOR, NULL);
+				_ICACHE_DISABLE();
+				_ICACHE_DISABLE();
+				ioctl(flash_file, FLASH_IOCTL_ERASE_SECTOR, NULL);
+				_ICACHE_DISABLE();
+				_ICACHE_DISABLE();
+				ioctl(flash_file, FLASH_IOCTL_ERASE_SECTOR, NULL);
+				_ICACHE_DISABLE();
+				fclose(flash_file);
+				return 0;
+			}
+		}
+		else 
+		{
+			printf("\nData written to the flash.\n");
+			fclose(flash_file);
+			printf("\nFlash Write function End.");
+			return 1;
+		}
+		fclose(flash_file);
+	}
+}
 void Write_Flash(uint8_t buffer[32],uint8_t len)
 {
 	uint_32        ioctl_param;
