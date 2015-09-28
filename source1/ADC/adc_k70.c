@@ -510,15 +510,13 @@ void ADC_Init(void)
 	{    
 		printf("ros_sens1 init failed\n");
 	}
-	
-#if ENABLE_ROS2	
+		
 	//	printf("Opening Reflective Object sensor 2 channel  ...");
 	ros_sens2= fopen(ADC0 "three", (const char*)&ROS_2_para);
 	if(ros_sens2 == NULL)
 	{    
 		printf("ros_sens2 init failed\n");
 	}
-#endif
 	
 /***************Configuring Battery ADC pins*********************/ 
 	
@@ -533,7 +531,7 @@ void ADC_Init(void)
 	}
 	//	printf("Opening Battery Current sensor channel  ...");
 	batt_current = fopen(ADC0 "twenty three", (const char*)&Batt_current_para);
-	if(batt_current != NULL)
+	if(ros_sens1 != NULL)
 	{    
 	}
 	else
@@ -542,7 +540,7 @@ void ADC_Init(void)
 	}
 	//	printf("Opening Battery Temperature sensor channel  ...");
 	batt_temp = fopen(ADC1 "twenty three", (const char*)&Batt_temp_para); /* adc:2 is running now */	
-	if(batt_temp != NULL)
+	if(batt_sens != NULL)
 	{    
 	}
 	else
