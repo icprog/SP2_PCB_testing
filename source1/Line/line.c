@@ -278,10 +278,10 @@ void Draw_Rect(uint_16 X1, uint_16 Y1, uint_16 X2, uint_16 Y2, uint_8 pixel)
     draw_line_horizontal(X1, X2, Y2, pixel);
     
     /* Draw Vertical  Left line*/
-    draw_line_vertical(X1, Y1-2, Y2-2, pixel);
+    draw_line_vertical(X1, Y1, Y2, pixel);
     
     /* Draw Vertical  Right line*/
-    draw_line_vertical(X2, Y1-2, Y2-2, pixel);
+    draw_line_vertical(X2, Y1, Y2, pixel);
 }
 
 /*-----------------------------------------------------------------------------
@@ -376,23 +376,6 @@ void Draw_Line(uint_16 X1, uint_16 Y1, uint_16 X2, uint_16 Y2, uint_8 pixel)
     
 }
 
-/*-----------------------------------------------------------------------------
- *  Function:     Draw_Rect_Box
- *  Brief:        Draw a rectangular box with some width
- *  Parameter:    X,Y coordinate and pixel colour
- *  Return:       None
- -----------------------------------------------------------------------------*/
-void Draw_Rect_Box(uint_16 X1, uint_16 Y1, uint_16 X2, uint_16 Y2, uint_8 pixel)
-{
-	for(int i =0; i<3; i++)
-	{
-		Draw_Rect(X1,Y1,X2,Y2,pixel);
-		X1++;
-		X2--;
-		Y1++;
-		Y2--;
-	}
-}
 /*-----------------------------------------------------------------------------
  *************************        END        **********************************
  -----------------------------------------------------------------------------*/

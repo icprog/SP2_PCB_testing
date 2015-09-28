@@ -16,8 +16,8 @@
 #define RAW_DATA_TO_VOLTAGE_MULTIPLIER (0.00005035)
 #define BATTERY_VOLTAGE_MULTIPILER (0.000048)
 
-uint_8 GetSensor_Output(float *pressure, float *depth, uint_16 *Qrd, uint_16 *raw_pressure,
-		uint_16 *raw_depth);
+uint_8 GetSensor_Output(float *, float *, uint_16 *, uint_16 *,uint_16 *);
+uint_8 Get_ADC_Outputs( uint_16 *,uint_16 *, uint_16 *, uint_16 *,uint_16 *,uint_16 *,uint_16 * );
 #endif
 
 /*-----------------------------------------------------------------------------

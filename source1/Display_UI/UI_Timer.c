@@ -50,6 +50,30 @@ unsigned char Processing_Display=0;
 #define BEEP_FIRST_LIMIT   (BEEP_INTERVAL_1/UI_TIMER_TIME_INTERVELL)
 #define BEEP_SECOND_LIMIT  (BEEP_INTERVAL_2/UI_TIMER_TIME_INTERVELL)
 
+
+/*-----------------------------------------------------------------------------* 
+ * Function:    ui_timer_de_init
+ * Brief:       De init UI timer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+void ui_Hwtimer_start(void)
+{
+    hwtimer_start(&hwtimer2a);
+
+}
+
+/*-----------------------------------------------------------------------------* 
+ * Function:    ui_timer_de_init
+ * Brief:       De init UI timer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+void ui_Hwtimer_stop(void)
+{
+    hwtimer_stop(&hwtimer2a);
+}
+
 /*-----------------------------------------------------------------------------* 
  * Function:    Check_Button_Timer_Timeout
  * Brief:       Check weather timeout occurred or not
@@ -122,35 +146,35 @@ void Short_beep_Restart_timer(uint_32 time)
 static void hwtimer2a_callback(pointer )
 {
     
-//    if (GPS_ON_timer_count != 0x00)
-//    {
-//    	GPS_ON_timer_count--;
-//    }
-//    if((GPS_Current_State == GPS_POWER_OFF)&&(GPS_ON_timer_count == 0x00)&&(Settings_Data.GPS_power_status == GPS_ON))
-//    {
-//		GPS_OFF_timer_start(180000);	// 3 min
-//		GPS_Current_State = GPS_POWER_ON;
-//		gpsCC4000OStartFixes(); 
-//		/* enable interrupt on GPIO peripheral module*/
-//		lwgpio_int_enable(&FIX_AVL, TRUE );
-//    }
-//    if (GPS_OFF_timer_count != 0x00)
-//    {
-//    	GPS_OFF_timer_count--;
-//    }
-//    
-//    if (GPS_Lock_timer_count != 0x00)
-//    {
-//    	GPS_Lock_timer_count--;
-//    }
-//    if((GPS_Current_State == GPS_LOCKING)&&(GPS_Lock_timer_count == 0x00))
-//    {
-//    	// disable pin isr
-//    	// disable locking timer
-//		/* disable interrupt on GPIO peripheral module*/
-////		lwgpio_int_enable(&FIX_AVL, FALSE );
-//    	GPS_Current_State = GPS_LOCKED;
-//    }
+    if (GPS_ON_timer_count != 0x00)
+    {
+    	GPS_ON_timer_count--;
+    }
+    if((GPS_Current_State == GPS_POWER_OFF)&&(GPS_ON_timer_count == 0x00)&&(Settings_Data.GPS_power_status == GPS_ON))
+    {
+		GPS_OFF_timer_start(180000);	// 3 min
+		GPS_Current_State = GPS_POWER_ON;
+		gpsCC4000OStartFixes(); 
+		/* enable interrupt on GPIO peripheral module*/
+		lwgpio_int_enable(&FIX_AVL, TRUE );
+    }
+    if (GPS_OFF_timer_count != 0x00)
+    {
+    	GPS_OFF_timer_count--;
+    }
+    
+    if (GPS_Lock_timer_count != 0x00)
+    {
+    	GPS_Lock_timer_count--;
+    }
+    if((GPS_Current_State == GPS_LOCKING)&&(GPS_Lock_timer_count == 0x00))
+    {
+    	// disable pin isr
+    	// disable locking timer
+		/* disable interrupt on GPIO peripheral module*/
+//		lwgpio_int_enable(&FIX_AVL, FALSE );
+    	GPS_Current_State = GPS_LOCKED;
+    }
     if (Button_bounce_timer_count != 0x00)
     {
         Button_bounce_timer_count--;
@@ -237,34 +261,22 @@ static void hwtimer2a_callback(pointer )
     {
     	Ble_wakeup = YES;
     }
-       
+    
+    if(Sensor_screan_timer != 0)
+    {
+    	Sensor_screan_timer--;   	
+    	if(Sensor_screan_timer == 0)
+    	{
+    		Sensor_screan_timeout = 1;
+    	}
+    	else
+    	{
+    		Sensor_screan_timeout = 0;
+    	}
+    	
+    }
+    
 }
-
-
-
-/*-----------------------------------------------------------------------------* 
- * Function:    ui_timer_de_init
- * Brief:       De init UI timer
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void ui_Hwtimer_start(void)
-{
-    hwtimer_start(&hwtimer2a);
-
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    ui_timer_de_init
- * Brief:       De init UI timer
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void ui_Hwtimer_stop(void)
-{
-    hwtimer_stop(&hwtimer2a);
-}
-
 /*-----------------------------------------------------------------------------* 
  * Function:    ui_timer_de_init
  * Brief:       De init UI timer
@@ -518,7 +530,7 @@ void BLE_hand_shake_timer_start(uint_32 time)
  * Parameter:   None
  * Return:      None
  -----------------------------------------------------------------------------*/
-void Start_sensor_output_screen_timer(uint_32 time)
+Start_sensor_output_screen_timer(uint_32 time)
 {	
 	Sensor_screan_timeout = 0;
 	Sensor_screan_timer = (time * UI_TIMER_TIME_INTERVELL);

@@ -318,7 +318,7 @@ uint_8 Create_file_system_if_sd_card_detected(boolean inserted)
 
 			printf("SD card is detected with proper file system. \n");
 			/**  Naming SD Card....**/
-			if (ioctl(filesystem_handle, IO_IOCTL_SET_VOLUME, (uint_32_ptr) "SP2") != MFS_NO_ERROR)
+			if (ioctl(filesystem_handle, IO_IOCTL_SET_VOLUME, (uint_32_ptr) "AVATECH") != MFS_NO_ERROR)
 			{
 				printf("Error While Naming SDcard.\n");
 			}
@@ -631,7 +631,7 @@ void Read_Favourite_file_information_From_Sdcard(void)
 	MQX_FILE_PTR fd_ptr;  
 
 	/* Opening settings file from SD card*/
-	fd_ptr = fopen("a:__FAVOURITES_V75.bin", "r");
+	fd_ptr = fopen("a:__FAVOURITES_V77.bin", "r");
 	if (fd_ptr == NULL)
 	{
 		Favourites_file_count=FavouriteEntry[0].Favourites_Dir_Count=0;
@@ -677,7 +677,7 @@ void Write_Favourite_file_information_To_Sdcard(void)
 	}
 
 	/* Opening settings file from SD card*/
-	fd_ptr = fopen("a:__FAVOURITES_V75.bin", "w");
+	fd_ptr = fopen("a:__FAVOURITES_V77.bin", "w");
 	if (fd_ptr == NULL)
 	{
 		printf("\nFAVOURITE_FILE NOT CREATED]\n");
@@ -1742,133 +1742,121 @@ void format_sd_card(void)
 	}
 }
 
-void Uninstall_FS_for_MSD(void)
+long lSize = 0;
+void Test_Sd_card(void)
 {
+	buff_clear();
+	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+	Create_Title("SDCARD TEST",strlen("SDCARD TEST"));
 
-	/* Close the filesystem */
-	if ((filesystem_handle != NULL) && (MQX_OK != fclose(filesystem_handle))) 
-	{
-		printf("Error closing filesystem.\n");
-	}
-	filesystem_handle = NULL;
-
-	/* Uninstall MFS  */
-	error_code = _io_dev_uninstall(filesystem_name);
-	if (error_code != MFS_NO_ERROR) 
-	{
-		printf("Error uninstalling filesystem.\n");
-	}
-
-	/* Close partition */
-	if ((partition_handle != NULL)&& (MQX_OK != fclose(partition_handle)))
-	{
-		printf("Error closing partition.\n");
-	}
-	partition_handle = NULL;
-
-	/* Uninstall partition manager  */
-	error_code = _io_dev_uninstall(partman_name);
-	if (error_code != MFS_NO_ERROR) 
-	{
-		printf("Error uninstalling partition manager.\n");
-	}
-
-}
-
-void Re_install_FS_for_MSD(void)
-{
-	/* Install partition manager over SD card driver */
-	error_code = _io_part_mgr_install(sdcard_handle, partman_name,0);
-	if (error_code != MFS_NO_ERROR) 
-	{
-		printf("Error installing partition manager: %s\n",
-				MFS_Error_text((uint_32) error_code));
-		//		return 1;
-	}
-
-	/* Open partition */
-	partition_handle = fopen(partition_name, NULL);
-	if (partition_handle != NULL) 
-	{
-		/* Validate partition */
-		error_code = _io_ioctl(partition_handle, IO_IOCTL_VAL_PART,	NULL);
-		if (error_code != MFS_NO_ERROR) 
-		{
-			printf("Error validating partition: %s\n",
-					MFS_Error_text((uint_32) error_code));
-			printf("Not installing MFS.\n");
-			//			return 1;
-		}
-
-		/* Install MFS over partition */
-		error_code = _io_mfs_install(partition_handle,filesystem_name, 0);
-		if (error_code != MFS_NO_ERROR) 
-		{
-			printf("Error initializing MFS over partition: %s\n",
-					MFS_Error_text((uint_32) error_code));
-		}
-
-	} 
-	else 
-	{
-
-		// printf("Installing MFS over SD card driver...\n");
-
-		/* Install MFS over SD card driver */
-		error_code = _io_mfs_install(sdcard_handle, filesystem_name,(_file_size) 0);
-		if (error_code != MFS_NO_ERROR) 
-		{
-			printf("Error initializing MFS: %s\n",
-					MFS_Error_text((uint_32) error_code));
-		}
-	}
-
-	/* Open file system */
-	if (error_code == MFS_NO_ERROR) 
-	{
-		filesystem_handle = fopen(filesystem_name, NULL);
-		error_code = ferror(filesystem_handle);
-		if (error_code == MFS_NOT_A_DOS_DISK) 
-		{
-			printf("NOT A DOS DISK! You must format to continue.\n");
-		}
-		else if (error_code != MFS_NO_ERROR) 
-		{
-			printf("Error opening filesystem: %s\n",
-					MFS_Error_text((uint_32) error_code));
-		}
-
-		//			printf("SD card is detected with proper file system. \n");
-		/**  Naming SD Card....**/
-		if (ioctl(filesystem_handle, IO_IOCTL_SET_VOLUME, (uint_32_ptr)Serial_Numbr) != MFS_NO_ERROR)
-		{
-			printf("Error While Naming SDcard.\n");
-		}
-	}
-}
-
-void Write_SDcard_DFU()
-{
-	MQX_FILE_PTR bat_fd_ptr; 
-	uint8_t tmp_buff = 0;
 	
-	ioctl(filesystem_handle, IO_IOCTL_CHANGE_CURRENT_DIR, (uint_32_ptr) "a:\\");
-	/* Opening settings file from SD card*/
-	bat_fd_ptr = fopen(DFU_CHECK_FILE_NAME, "w");
-	if (bat_fd_ptr == NULL)
+	static uint_8 state=0;
+	MQX_FILE_PTR fd_ptr;
+
+//	printf("Initialising SD CARD ...\n");
+//	if(	Sd_Card_init()==1)
+//	{
+//		printf("SD CARD initialisation Failed...\n");
+//		return;
+//	}
+//	printf("SD CARD initialisation Completed...\n");
+
+	Draw_string_new(15,80, (uint_8 *)"STARTING SD TEST",COLOUR_BLACK,MEDIUM_FONT);
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	printf("\n*******STARTING SD CARD TEST*********\n");
+	_time_delay(1000);
+	
+	ui_timer_start(30000); ///30 sec
+	//	printf("\n30 sec Timer started\n");
+
+	while (1) 
 	{
-		printf("No image file found\n");
+//		Create_file_system_if_sd_card_detected(TRUE);
+		printf("Writing a file to SD CARD...\n");
+
+		fd_ptr=fopen("a:Test_File.txt","w"); 
+		if(fd_ptr==NULL) 
+		{ 
+			printf ("File error while opening file in write mode...!\n");
+			printf("Writing a file to SD CARD Failed.\n");
+			break;
+		}
+		else
+		{
+			if ( fwrite("hello",1,5,fd_ptr)< 0) 
+			{
+				printf ("ERROR while writing data to file\n");
+				printf("Writing a file to SD CARD Failed.\n");
+
+			}
+			else
+			{
+				printf("Writing a file to SD CARD Success.\n"); 
+			}
+			fclose (fd_ptr);
+		}
+
+
+
+		printf("Reading a file from SD CARD...\n");
+
+		fd_ptr=fopen("a:Test_File.txt","r"); 
+
+		if(fd_ptr==NULL) 
+		{ 
+			printf ("File error while opening file in read mode...!\n");
+			printf("Reading a file from SD CARD Failed.\n");
+			break;
+		}
+		else
+		{
+			fseek(fd_ptr,0,IO_SEEK_END);                                		/*  Set File Pointer to end of file*/
+			lSize=ftell(fd_ptr);
+			//char *buffer = (char*) malloc (sizeof(char)*lSize);					/* allocate memory to contain the whole file*/
+			char buffer[128];//
+	/* 		if (buffer == NULL) 
+			{ 
+				printf ("Memory error...malloc failed!\n"); 
+
+			} */
+
+			fseek(fd_ptr,0,IO_SEEK_SET);                                        /*  Set File Pointer to Begin of file*/
+			size_t result = fread (buffer,1,lSize,fd_ptr);	
+			if (result != lSize) 
+			{ 
+				printf ("Reading error.Length mismatch in the file..!\n");
+				ui_timer_stop();
+				printf("Reading a file from SD CARD Failed.\n");
+			}
+			fclose (fd_ptr); 
+
+			if((buffer[0]=='h')&&(buffer[1]=='e')&&(buffer[2]=='l')&&(buffer[3]=='l')&&(buffer[4]=='o'))
+			{
+				printf("Reading a file from SD CARD Success.\n");
+				Draw_string_new(15,200, (uint_8 *)"SD TEST SUCCESS",COLOUR_BLACK,MEDIUM_FONT);
+				ui_timer_stop();
+				break; 
+			}
+			else
+			{
+				printf ("Reading error.Data mismatch between write and read..!\n");
+				printf("Reading a file from SD CARD Failed.\n");
+				Draw_string_new(15,200, (uint_8 *)"SD TEST FAILED",COLOUR_BLACK,MEDIUM_FONT);
+				ui_timer_stop();
+				break; 
+			}
+		}
+		//		}
+
+		if(Check_UI_Timer_Timeout()==TIME_OUT)
+		{
+			printf("Testing SD CARD failed. Not completed within 30 second. \n");
+			Draw_string_new(15,200, (uint_8 *)"SD TEST FAILED",COLOUR_BLACK,MEDIUM_FONT);
+			break;
+		}		
 	}
-	else
-	{
-		if((SP2_IMG.CRC_Status == 1) && (CALIB_IMG.CRC_Status == 1))
-			tmp_buff = 3; // Both files having update 
-		else if((SP2_IMG.CRC_Status == 0) && (CALIB_IMG.CRC_Status == 1))
-			tmp_buff = 2; // CALIB IMG files having update 
-		else if((SP2_IMG.CRC_Status == 1) && (CALIB_IMG.CRC_Status == 0))
-			tmp_buff = 1; //SP2_IMG files having update
-		
-		write(bat_fd_ptr,&tmp_buff,1);
-		fclose(bat_fd_ptr);	
-	}
+	printf("\n\n*********SD CARD TEST COMPLETED********\n\n");
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	_time_delay(1000);
+	return;
 }

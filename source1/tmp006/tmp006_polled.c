@@ -602,6 +602,10 @@
 //#include "lsm303.h"
 #include "Sd_Card.h"
 #include "config.h"
+#include "UI_Display.h"
+#include "spi_lcd.h"
+#include "bitmap.h"
+#include "spi_config.h"
 
 #define TEMP_I2C_POLLED    "i2c1:"
 #define I2C_DEVICE_INTERRUPT "ii2c1:"
@@ -729,10 +733,12 @@ uint_8 init_tmp006_i2c1(void)
     		(tmp006_buffer[1]==Tmp_continuous_mode_command[1]))
     {
     	printf("Temperature Test Success\n");
+    	Draw_string_new(10,200, (uint_8 *)"TMP006 TEST SUCCESS",COLOUR_BLACK,MEDIUM_FONT);
     }
 	else
 	{
 		printf("Temperature Test Fail\n");
+    	Draw_string_new(10,200, (uint_8 *)"TMP006 TEST FAILED",COLOUR_BLACK,MEDIUM_FONT);
 	}
 	
 	printf("\n\n***End of Testing Temperature Sensor***\n\n");
@@ -1082,6 +1088,22 @@ void Tmp006_Read(char test_time)
     TMP_Data_Ready = 0;
     TMP006_enable_powerdown_mode();
     get_object_temperature(test_time);
+}
+
+void Test_Tmp006(void)
+{
+	printf("\n********STARTING TMP006 TEST**********\n");
+	buff_clear();
+	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+	Create_Title("TMP006 TEST",strlen("TMP006 TEST"));
+	Draw_string_new(15,80, (uint_8 *)"STARTING TMP TEST",COLOUR_BLACK,MEDIUM_FONT);
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	_time_delay(2000);
+	init_tmp006_i2c1();
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	_time_delay(2000);
+	printf("\n********TEMPERATURE TEST COMPLETED********\n");
+	
 }
 
 /*-----------------------------------------------------------------------------

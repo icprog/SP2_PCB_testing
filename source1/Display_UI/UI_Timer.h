@@ -15,7 +15,7 @@
 
 #define NOT_TIMEOUT 0
 #define TIME_OUT 1
-#define BUTTON_DE_BOUNCE_TIME (250)
+#define BUTTON_DE_BOUNCE_TIME (180)
 extern volatile uint_32 GPS_OFF_timer_count;
 extern volatile uint_32 UI_timer_count;
 unsigned int Check_UI_Timer_Timeout(void);
@@ -37,8 +37,6 @@ void Short_beep_timer_stop(void);
 void Short_beep_timer_start(uint_32 time);
 void ui_timer_init(void);
 void ui_timer_de_init(void);
-void ui_Hwtimer_start(void);
-void ui_Hwtimer_stop(void);
 unsigned int Check_Sleep_Timer_Timeout(void);
 unsigned int Battery_check_Timer_Timeout(void);
 unsigned int Check_UI_Timer_Timeout(void);
@@ -52,6 +50,8 @@ void Processing_Display_timer_start(uint_32 time);
 void Test_Gps(void);
 void Test_Sd_card(void);
 void gps_power_off(void);
+void ui_Hwtimer_start(void);
+void ui_Hwtimer_stop(void);
 extern uint8_t Sensor_screan_timeout;
 
 #endif /* UI_TIMER_H_ */

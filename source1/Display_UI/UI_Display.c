@@ -30,7 +30,6 @@
 #include "Sensor_Configuration.h"
 #include "Bulk_transfer.h"
 #include "common_headers.h"
-#include "matrix_operations.h"
 
 #define BATTERY_VALUE_DISPLAY_ENABLE 0
 void Increment_Default_Graph_View_from_Settings(void);
@@ -46,57 +45,36 @@ static void Create_dispaly_sdcard_insert(void);
 static void Create_dispaly_Waiting_for_file_Content(void);
 static void Create_New_Snow_Profile_Collecting_Content(void);
 static void Create_New_Snow_Profile_Calibration_Content(void);
+static void Create_Settings_Password_Content(void);
+static void Create_Settings_Main_Content(void);
+static void Create_New_Snow_Profile_processing_Content(void);
 static void Create_Bluetooth_main_Content(void);
 static void Create_Sensor_Output_Content(void);
+static void Create_Snow_Profile_Delete_Content(void);
+static void Create_Snow_Profile_Discard_Content(void);
 static void Create_Slope_Measurement_Content(void);
+static void Create_New_Snow_Profile_Content(void);
+static void Create_Snow_Profile_Details_Content(void);
+extern void Create_Snow_Profiles_List_Content(void);
+static void Create_Testmenu_Content(void);
+static void Create_error_screen_during_test_Content(void);
 static void Create_MultipleTestmenu_Content(void);
+static void Create_Settingsmenu_Content(void);
 static void Create_Mainmenu_Content(void);
-//static void Create_Settings_Selection_Content(void);
+static void Create_Settings_Selection_Content(void);
+static void Create_Snowprofileoptions_Content(void);
 extern void Change_Defualt_Gragh_View(void);
-static void Create_GPSmenu_Content(void);
-
-static void Create_IRDMSmenu_Content(void);
-static void Create_PressureMenu_Content(void);
-static void Create_ROS_Menu_Content(void);
-static void Create_AccelerometerMenu_Content(void);
-static void Create_Accelerometer_Calib_Values_Error_Screen_Content(void);
-static void Create_MagnetometerMenu_Content(void);
-static void Create_compass_calibration_screen_content(void); 
-static void Create_accelerometer_calibration_screen_content(void); 
-
-int comp(const void * a, const void * b);
-
-void display_IRDMS_Calibration(void);
-void display_Pressure_sensor_Calibration(void);
-void display_Accelerometer_Calibration(void);
-void display_Magnetometer_Calibration(void);
-void display_Collect_Accelerometer_Calibration_Data(void);
-extern void display_Accelerometer_Calib_Values_Error_Screen();
-void display_ROS_Calibration(void);
-void display_GPS_Calibration(void);
-void display_compass_calibration_screen(void);
-
-void print_calib_data(CalibTable *Sensor_Calib_Table,uint_8 No_of_calib_condition);
-void Read_calib_data(const char file_name[32],CalibTable *Sensor_Calib_Table);
-
-
-uint_8 calibrate_IRDMS(void);
-uint_8 calibrate_Pressure_Sensor(void);
-void accel_cal_transform(void);
-
+static void create_Snow_Profile_Chart(void);
 extern void Add_Item_To_Menu(const char *menu_Text, uint_8 menu_position,
 		uint_16 menu_selection_status);
 extern void Create_Footer(char * leftMenu,uint16_t left_len, char * rightMenu,uint16_t right_len);
-void Create_Title(char * aString, uint16_t string_length);
-void Create_Title_calib(char * aString, uint16_t string_length,uint_16 title_x,uint_16 title_y);
+extern void Create_Title(char * aString, uint16_t string_length);
 static void Create_Title_old(char * titleString);
 void delete_snow_profile_selected_from_favourite(void);
 void Low_battery_shutdown(void);
 void Battery_checkon_powerup(void);
 void Enable_all_sensors(void);
 void Disable_all_sensors(void);
-
-uint_8 Calib_status[6] ={0,0,0,0,0,0};
 
 unsigned char Test_disp_ctr=0;
 
@@ -178,19 +156,7 @@ volatile uint_8 Config_settings_selection = 0;
 uint_8 Battery_adc_stucked_and_shows_zero = 0;
 uint_8 Battery_low_status = 0;
 
-uint_8 compass_calibration_screen = COMPASS_CALIBRATION_START_SCREEN;
-uint_8 accelerometer_calibration_screen = ACC_CALIBRATION_ACC_SCREEN_DOWN;
-
 //DateFolderEntry Date_Folder[100];
-
-
-////This variable is incremented and decremented according to navigation key 
-//volatile uint_8 IRDMS_Condition_selection = 0;
-//volatile uint_8 Pressure_Condition_selection = 0;
-//volatile uint_8 ROS_Condition_selection = 0;
-//volatile uint_8 Accelerometer_Condition_selection = 0;
-//volatile uint_8 Magnetometer_Condition_selection = 0;
-//volatile uint_8 Acc_reading_status = 0;
 
 
 char Snow_Profile_Directory[64][16];  //Folder Name: Format is "YYYYMMDD"
@@ -204,20 +170,17 @@ FavouriteTableEntry FavouriteEntry[64];
 //Table for displaying mainmenu and corresponding functions and UI states
 MenuTableEntry Mainmenu_Table[] = {
 		//   Num,   display_name,       	function,                     state	
-		{ 0, "IRDMS",      			display_IRDMS_Calibration,          	UI_CALIBRATION_IRDMS 			}, 
-		{ 1, "PRESSURE SENSOR", 	display_Pressure_sensor_Calibration, 	UI_CALIBRATION_PRESSURE 		}, 
-		{ 2, "ACCELEROMETER",    	display_Collect_Accelerometer_Calibration_Data,   	UI_ACCELEROMETER_CALIBRATION_SCREEN_DOWN}, 
-//		{ 2, "ACCELEROMETER",    	display_Accelerometer_Calibration,   	UI_CALIBRATION_ACCELEROMETER 	}, 
-//		{ 3, "MAGNETOMETER",      	display_Magnetometer_Calibration,  		UI_CALIBRATION_MAGNETOMETER		}, 
-//		{ 4, "MAGNETOMETER",	    display_compass_calibration_screen,  	UI_COMPASS_CALIBRATION			}, 	
-		{ 3, "ROS", 				display_ROS_Calibration ,        		UI_CALIBRATION_ROS 		    	}, 
-		{ 4, "GPS", 				display_GPS_Calibration,    			UI_CALIBRATION_GPS 				}, 
-//		{ 5, "MATRIX TEST", 		matrix_test,    						MATRIX_TEST	},
+		{ 0, "NEW TEST",      		display_Testmenu,          	 	UI_NEW_TEST_LIST 		}, 
+		{ 1, "SNOW PROFILES", 		display_Snow_Profiles_List, 	UI_SNOW_PROFILE_LIST 	}, 
+		{ 2, "FAVORITES",    		display_favourites_menu,   	 	UI_FAVOURITES_LIST 		}, 
+		{ 3, "SETTINGS",      		display_Settings_Main,  		UI_SETTINGS				}, 
+		{ 4, "SENSOR OUTPUT", 		display_Sensor_Output ,        	UI_SENSOR_OUTPUT 		}, 
+		{ 5, "MASS STORAGE", 		display_mass_storage_enable,    UI_MASS_STORAGE_ENABLE 	}, 
+		{ 6, "BLUETOOTH TRANSFER", 	display_Bluetooth_main,    		UI_BLUETOOTH_MAIN 		}, 
 
-#define NUM_OF_MAINMENU_ITEM 5
+#define NUM_OF_MAINMENU_ITEM 4
 
 };
-
 
 //Table for displaying Test menu and corresponding functions and UI states
 MenuTableEntry Testmenu_Table[] = {
@@ -305,673 +268,6 @@ MenuTableEntry Defaultgraphview_Table[] = {
 
 
 /*-----------------------------------------------------------------------------* 
- * Function:    display_IRDMS_Calibration
- * Brief:       display_IRDMS_Calibration
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void display_IRDMS_Calibration(void)
-{
-	buff_clear();
-	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
-
-	Create_Title_calib("CALIBRATION",strlen("CALIBRATION"),0,2);
-	Create_Title_calib("IRDMS ",strlen("IRDMS "),0,22);
-	Create_IRDMSmenu_Content();
-	Create_Footer( "BACK",strlen("BACK"), "SAVE",strlen("BACK"));
-
-	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    display_Pressure_sensor_Calibration
- * Brief:       display_Pressure_sensor_Calibration
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void display_Pressure_sensor_Calibration(void)
-{
-	buff_clear();
-	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
-
-	Create_Title_calib("CALIBRATION",strlen("CALIBRATION"),0,2);
-	Create_Title_calib("PRESSURE SENSOR",strlen("PRESSURE SENSOR"),0,22);
-	Create_PressureMenu_Content();
-	Create_Footer( "BACK",strlen("BACK"), "SAVE",strlen("BACK"));
-	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
-
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    display_Accelerometer_Calibration
- * Brief:       display_Accelerometer_Calibration
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void display_Accelerometer_Calibration(void)
-{
-	buff_clear();
-	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
-
-	Create_Title_calib("CALIBRATION",strlen("CALIBRATION"),0,2);
-	Create_Title_calib("ACCELEROMETER",strlen("ACCELEROMETER"),0,22);
-	Create_AccelerometerMenu_Content();
-	Create_Footer( "BACK",strlen("BACK"), "SAVE",strlen("BACK"));
-	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    display_Accelerometer_Calib_Values_Error_Screen
- * Brief:       display_Accelerometer_Calib_Values_Error_Screen
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void display_Accelerometer_Calib_Values_Error_Screen(void)
-{
-	buff_clear();
-	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
-
-	Create_Title_calib("CALIBRATION",strlen("CALIBRATION"),0,2);
-	Create_Title_calib("ACCELEROMETER",strlen("ACCELEROMETER"),0,22);
-	Create_Accelerometer_Calib_Values_Error_Screen_Content();
-	Create_Footer( "BACK",strlen("BACK"), "",strlen(""));
-	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
-}
-
-
-/*-----------------------------------------------------------------------------* 
- * Function:    display_Accelerometer_Calibration
- * Brief:       display_Accelerometer_Calibration
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void display_Collect_Accelerometer_Calibration_Data(void)
-{
-	buff_clear();
-	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
-
-	Create_Title_calib(" CALIBRATION",strlen(" CALIBRATION"),0,2);
-	Create_Title_calib("ACCELEROMETER",strlen("ACCELEROMETER"),0,22);
-	Create_accelerometer_calibration_screen_content();
-	Create_Footer( "BACK",strlen("BACK"), "COLLECT",strlen("COLLECT"));
-	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    display_Magnetometer_Calibration
- * Brief:       display_Magnetometer_Calibration
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void display_Magnetometer_Calibration(void)
-{
-	buff_clear();
-	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
-
-	Create_Title_calib("CALIBRATION",strlen("CALIBRATION"),0,2);
-	Create_Title_calib("MAGNETOMETER",strlen("MAGNETOMETER"),0,22);
-	Create_MagnetometerMenu_Content();
-	Create_Footer( "BACK",strlen("BACK"), "SAVE",strlen("SAVE"));
-	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    display_compass_calibration_screen
- * Brief:       Display the compass calibration screen
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void display_compass_calibration_screen(void)
-{
-	//buff_clear();
-	//	if(compass_calibration_screen == COMPASS_CALIBRATION_START_SCREEN)
-	//	{
-	//		Draw_Image_on_Buffer((uint_8 *) both_footer_background);
-	//	}
-	//	else
-	//	{
-	Draw_Image_on_Buffer((uint_8 *) left_footer_background);
-	//	}
-	//	Create_Header();
-	//	Create_Title("COMPASS CALIBRATION", strlen("COMPASS CALIBRATION"));
-	Create_Title_calib("CALIBRATION",strlen("CALIBRATION"),0,2);
-	Create_Title_calib("COMPASS",strlen("COMPASS"),0,22);
-
-	Create_compass_calibration_screen_content();
-
-	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
-
-
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    display_ROS_Calibration
- * Brief:       display_ROS_Calibration
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void display_ROS_Calibration(void)
-{
-	buff_clear();
-	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
-
-	Create_Title_calib("CALIBRATION",strlen("CALIBRATION"),0,2);
-	Create_Title_calib("ROS",strlen("ROS"),0,22);
-	Create_ROS_Menu_Content();
-	Create_Footer( "BACK",strlen("BACK"), "SAVE",strlen("BACK"));
-
-	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    display_GPS_Calibration
- * Brief:       display_GPS_Calibration
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void display_GPS_Calibration(void)
-{
-	buff_clear();
-	Draw_Image_on_Buffer((uint_8 *) left_footer_background);
-
-	Create_Title_calib("CALIBRATION",strlen("CALIBRATION"),0,2);
-	Create_Title_calib("GPS",strlen("GPS"),0,22);
-	Create_GPSmenu_Content();
-	Create_Footer( "BACK",strlen("BACK"), "",0);
-	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Create_IRDMSmenu_Content
- * Brief:       Turn gps on or off
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-static void Create_GPSmenu_Content(void)
-{
-	uint_16 x_position, y_position;
-	char GPS_Data[10];
-
-	x_position = (DISPLAY_X_MAX / 2) - 10 - (((strlen("SEARCHING...")) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 125;
-	Draw_string_new(x_position, y_position, (uint_8 *) "SEARCHING...", COLOUR_BLACK, MEDIUM_FONT);
-
-	memset(GPS_Data,0x00,10);
-	RTC_TIME_STRUCT Gps_Time;
-	_rtc_get_time (&Gps_Time);
-	sprintf(GPS_Data,"%d",Gps_Time.seconds);
-
-	x_position = (DISPLAY_X_MAX / 2) -5 - (((strlen(GPS_Data)) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 251;
-	Draw_string_new(x_position, y_position, GPS_Data, COLOUR_BLACK, MEDIUM_FONT);
-	Draw_Rect_Box(70,246,160,286,COLOUR_BLACK);
-}
-/*-----------------------------------------------------------------------------* 
- * Function:    Create_IRDMSmenu_Content
- * Brief:       Turn gps on or off
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-static void Create_IRDMSmenu_Content(void)
-{
-	uint_16 x_position, y_position;
-	float IRDMS_voltage = 0.0;
-	char  IRDMS_voltage_string[16];
-
-	ADC_RESULT_STRUCT adc_out;
-	memset(IRDMS_voltage_string,0x00,16);	
-
-	x_position = (DISPLAY_X_MAX / 2) - 10 - (((strlen("CONDITION:")) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 125;
-	Draw_string_new(x_position, y_position, (uint_8 *) "CONDITION:", COLOUR_BLACK, MEDIUM_FONT);
-
-
-	x_position = (DISPLAY_X_MAX / 2)  - (50+12*IRDMS_Condition_selection) - (((strlen(IRDMS_Calib_Table[IRDMS_Condition_selection].Calib_condition)) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 160;
-	Draw_string_new(x_position, y_position,
-			(uint_8 *) IRDMS_Calib_Table[IRDMS_Condition_selection].Calib_condition, 
-			COLOUR_BLACK, LARGE_FONT);
-
-
-	if (read(ir_sens, &adc_out,sizeof(adc_out)))
-	{
-		//		printf("Adc_out = %X",adc_out.result);
-		IRDMS_voltage = (adc_out.result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
-		sprintf(IRDMS_voltage_string,"%0.2f V",IRDMS_voltage);
-		printf("\nIRDMS Voltage =%0.2f V",IRDMS_voltage);
-	}
-
-	x_position = (DISPLAY_X_MAX / 2) -5 - (((strlen(IRDMS_voltage_string)) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 251;
-	Draw_string_new(x_position, y_position, IRDMS_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
-	Draw_Rect_Box(70,246,160,286,COLOUR_BLACK);
-
-
-	if(IRDMS_Calib_Table[IRDMS_Condition_selection].curr_voltage < 3.5)
-	{
-		sprintf(IRDMS_voltage_string,"%0.2f V",IRDMS_Calib_Table[IRDMS_Condition_selection].curr_voltage);
-		y_position = 300;
-		x_position = (DISPLAY_X_MAX / 2) -5 - (((strlen(IRDMS_voltage_string)) / 2) * NUM_X_PIXEL_PER_CHAR);
-		Draw_string_new(x_position, y_position, IRDMS_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
-	}
-
-}
-
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Create_IRDMSmenu_Content
- * Brief:       Turn gps on or off
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-static void Create_PressureMenu_Content(void)
-{
-	uint_16 x_position, y_position;
-	float PRESSURE_voltage = 0.0;
-	char  PRESSURE_voltage_string[16];
-
-	ADC_RESULT_STRUCT adc_out;
-
-	memset(PRESSURE_voltage_string,0x00,16);	
-
-	x_position = (DISPLAY_X_MAX / 2) - 10 - (((strlen("CONDITION:")) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 125;
-	Draw_string_new(x_position, y_position, (uint_8 *) "CONDITION:", COLOUR_BLACK, MEDIUM_FONT);
-
-
-	x_position = (DISPLAY_X_MAX / 2)  -30 - (((strlen(Pressure_Calib_Table[Pressure_Condition_selection].Calib_condition)) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 160;
-	Draw_string_new(x_position, y_position,
-			(uint_8 *) Pressure_Calib_Table[Pressure_Condition_selection].Calib_condition, 
-			COLOUR_BLACK, LARGE_FONT);
-
-
-	if (read(force_sens, &adc_out,sizeof(adc_out)))
-	{
-		//		printf("Adc_out = %X",adc_out.result);
-		PRESSURE_voltage = (adc_out.result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
-		sprintf(PRESSURE_voltage_string,"%0.2f V",PRESSURE_voltage);
-		printf("\nPressure Voltage =%0.2f V",PRESSURE_voltage);
-	}
-
-	x_position = (DISPLAY_X_MAX / 2) -5 - (((strlen(PRESSURE_voltage_string)) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 251;
-	Draw_string_new(x_position, y_position, PRESSURE_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
-	Draw_Rect_Box(70,246,160,286,COLOUR_BLACK);
-
-
-	if(Pressure_Calib_Table[Pressure_Condition_selection].curr_voltage < 3.5)
-	{
-		sprintf(PRESSURE_voltage_string,"%0.4f V",Pressure_Calib_Table[Pressure_Condition_selection].curr_voltage);
-		y_position = 300;
-		x_position = (DISPLAY_X_MAX / 2) -5 - (((strlen(PRESSURE_voltage_string)) / 2) * NUM_X_PIXEL_PER_CHAR);
-		Draw_string_new(x_position, y_position, PRESSURE_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
-	}
-
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Create_ROS_Menu_Content
- * Brief:       Turn gps on or off
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-static void Create_ROS_Menu_Content(void)
-{
-	uint_16 x_position, y_position;
-	float ROS1_voltage = 0.0;
-	char  ROS1_voltage_string[16];
-	float ROS2_voltage = 0.0;
-	char  ROS2_voltage_string[16];
-
-	ADC_RESULT_STRUCT adc_out;
-
-	memset(ROS1_voltage_string,0x00,16);
-	memset(ROS2_voltage_string,0x00,16);
-
-
-	x_position = (DISPLAY_X_MAX / 2) - 10 - (((strlen("CONDITION:")) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 125;
-	Draw_string_new(x_position, y_position, (uint_8 *) "CONDITION:", COLOUR_BLACK, MEDIUM_FONT);
-
-
-	x_position = (DISPLAY_X_MAX / 2) -50 - (((strlen(ROS1_Calib_Table[ROS_Condition_selection].Calib_condition)) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 160;
-	Draw_string_new(x_position, y_position,
-			(uint_8 *) ROS1_Calib_Table[ROS_Condition_selection].Calib_condition, 
-			COLOUR_BLACK, LARGE_FONT);
-
-	//Display ROS1
-	x_position = 35;
-	y_position = 251;
-	Draw_string_new(x_position, y_position, "ROS 1", COLOUR_BLACK, MEDIUM_FONT);
-	if (read(ros_sens1, &adc_out,sizeof(adc_out)))
-	{
-		//		printf("Adc_out = %X",adc_out.result);
-		ROS1_voltage = (adc_out.result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
-		sprintf(ROS1_voltage_string,"%0.2f V",ROS1_voltage);
-		printf("\nROS1 Voltage =%0.2f V",ROS1_voltage);
-	}
-
-	x_position = 30;
-	y_position = 281;
-	Draw_string_new(x_position, y_position, ROS1_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
-	Draw_Rect_Box(20,276,110,316,COLOUR_BLACK);
-
-
-	if(ROS1_Calib_Table[ROS_Condition_selection].curr_voltage < 3.5)
-	{
-		sprintf(ROS1_voltage_string,"%0.2f V",ROS1_Calib_Table[ROS_Condition_selection].curr_voltage);
-		y_position = 330;
-		x_position = 30;
-		Draw_string_new(x_position, y_position, ROS1_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
-	}
-	else
-	{
-		y_position = 330;
-		x_position =30;
-		Draw_string_new(x_position, y_position, "BLAH", COLOUR_BLACK, MEDIUM_FONT);
-	}
-	//Display ROS2
-	x_position = 145;
-	y_position = 251;
-	Draw_string_new(x_position, y_position, "ROS 2", COLOUR_BLACK, MEDIUM_FONT);
-	if (read(ros_sens2, &adc_out,sizeof(adc_out)))
-	{
-		//		printf("Adc_out = %X",adc_out.result);
-		ROS2_voltage = (adc_out.result) * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
-		sprintf(ROS2_voltage_string,"%0.2f V",ROS2_voltage);
-		printf("\nROS2 Voltage =%0.2f V",ROS2_voltage);
-	}
-
-	x_position = 140;
-	y_position = 281;
-	Draw_string_new(x_position, y_position, ROS2_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
-	Draw_Rect_Box(130,276,220,316,COLOUR_BLACK);
-
-	if(ROS2_Calib_Table[ROS_Condition_selection].curr_voltage < 3.5)
-	{
-		sprintf(ROS2_voltage_string,"%0.2f V",ROS2_Calib_Table[ROS_Condition_selection].curr_voltage);
-		y_position = 330;
-		x_position =140;
-		Draw_string_new(x_position, y_position, ROS2_voltage_string, COLOUR_BLACK, MEDIUM_FONT);
-	}
-	else
-	{
-		y_position = 330;
-		x_position =140;
-		Draw_string_new(x_position, y_position, "BLAH", COLOUR_BLACK, MEDIUM_FONT);
-	}
-
-}
-
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Create_IRDMSmenu_Content
- * Brief:       Turn gps on or off
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-static void Create_AccelerometerMenu_Content(void)
-{
-
-	float roll, pitch;
-	char  	tempString[16];
-	char 	aspect[4];
-	uint_16 magnetic_heading = 0xffff;
-	int_16  tempAngle = 0xffff;
-	uint_16 x_position, y_position;
-
-
-	memset(tempString,0x0,16);
-
-	x_position = (DISPLAY_X_MAX / 2) - 10 - (((strlen("CONDITION:")) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 125;
-	Draw_string_new(x_position, y_position, (uint_8 *) "CONDITION:", COLOUR_BLACK, MEDIUM_FONT);
-
-
-	x_position = (DISPLAY_X_MAX / 2) - 10 -
-			(((strlen(Accelerometer_Calib_Table[Accelerometer_Condition_selection].Calib_condition)) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 160;
-	Draw_string_new(x_position, y_position,
-			(uint_8 *) Accelerometer_Calib_Table[Accelerometer_Condition_selection].Calib_condition, 
-			COLOUR_BLACK, LARGE_FONT);
-
-
-	if(Acc_reading_status == 1)
-	{
-		Acc_reading_status = 0;
-		tempAngle = (int_16)(Accelerometer_Calib_Table[Accelerometer_Condition_selection].curr_voltage);
-		sprintf(tempString, "%d°", tempAngle);
-		printf("\nSlope Angle = %d°",tempAngle);
-	}
-	else if(Count_angle != 0)
-	{
-		Angle_result = (((float)(Angle_result/Count_angle)));
-		sprintf(tempString, "%d°", Angle_result);
-		printf("\nSlope Angle = %d°",Angle_result);
-		Count_angle = 0;
-		Angle_result = 0;
-	}
-	else
-	{
-//		transform_raw_acc();
-		transform_raw_acc_manual();
-		get_euler_angles(&roll, &pitch);
-		//printf("roll= %f pitch = %f \n", roll, pitch);
-		tempAngle = (int_16)pitch;
-		sprintf(tempString, "%d°", tempAngle);
-		printf("\nSlope Angle = %d°",tempAngle);
-	}
-
-
-	x_position = (DISPLAY_X_MAX / 2) -5 - (((strlen(tempString)) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 251;
-	Draw_string_new(x_position, y_position, tempString, COLOUR_BLACK, MEDIUM_FONT);
-	Draw_Rect_Box(70,246,160,286,COLOUR_BLACK);
-
-	if(Accelerometer_Calib_Table[Accelerometer_Condition_selection].curr_voltage < 150)
-	{
-		sprintf(tempString,"%d°",(int_16)(Accelerometer_Calib_Table[Accelerometer_Condition_selection].curr_voltage));
-		y_position = 300;
-		x_position = (DISPLAY_X_MAX / 2) -5 - (((strlen(tempString)) / 2) * NUM_X_PIXEL_PER_CHAR);
-		Draw_string_new(x_position, y_position, tempString, COLOUR_BLACK, MEDIUM_FONT);
-	}
-
-}
-
-
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Create_Accelerometer_Calib_Values_Error_Screen_Content
- * Brief:       Create_Accelerometer_Calib_Values_Error_Screen_Content
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-static void Create_Accelerometer_Calib_Values_Error_Screen_Content(void)
-{
-	int x_position, y_position;
-	
-	x_position = (DISPLAY_X_MAX / 2) - (((strlen("WARNING:")) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 150;
-	Draw_string(x_position, y_position, (uint_8 *) "WARNING:", COLOUR_BLACK);
-
-	x_position = (DISPLAY_X_MAX / 2) - (((strlen("NO ACC CONSTANTS")) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 180;
-	Draw_string(x_position, y_position, (uint_8 *) "NO ACC CONSTANTS", COLOUR_BLACK);\
-
-	x_position = (DISPLAY_X_MAX / 2) - (((strlen("FOUND!")) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 200;
-	Draw_string(x_position, y_position, (uint_8 *) "FOUND!!", COLOUR_BLACK);
-	
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Create_MagnetometerMenu_Content
- * Brief:       Create_MagnetometerMenu_Content
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-static void Create_MagnetometerMenu_Content(void)
-{
-
-	char  	tempString[16];
-	char 	aspect[4];
-	uint_16 magnetic_heading = 0xffff;
-	int_16  tempAngle = 0xffff;
-	uint_16 x_position, y_position;
-
-	memset(tempString,0x0,16);
-
-	x_position = (DISPLAY_X_MAX / 2) - 10 - (((strlen("CONDITION:")) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 125;
-	Draw_string_new(x_position, y_position, (uint_8 *) "CONDITION:", COLOUR_BLACK, MEDIUM_FONT);
-
-
-	x_position = (DISPLAY_X_MAX / 2) - 30 -
-			(((strlen(Magnetometer_Calib_Table[Magnetometer_Condition_selection].Calib_condition)) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 160;
-	Draw_string_new(x_position, y_position,
-			(uint_8 *) Magnetometer_Calib_Table[Magnetometer_Condition_selection].Calib_condition, 
-			COLOUR_BLACK, LARGE_FONT);
-
-
-	if(Count_heading != 0)
-	{		
-		qsort(mag_temp_heading_buff, Count_heading, sizeof(uint_16), comp);
-		Heading_result = mag_temp_heading_buff[(Count_heading / 2)];
-		sprintf(tempString, "%d°", Heading_result);
-		printf("\nSlope Angle = %d°",Heading_result);
-
-		memset(mag_temp_heading_buff,0x00,200);
-		Count_heading = 0;
-		Heading_result = 0;
-	}
-	else if(get_slope_measurement(&tempAngle, aspect, &magnetic_heading) == 0)
-	{
-		sprintf(tempString, "%d°", magnetic_heading);
-		printf("\nAspect = %d°",magnetic_heading);
-	}
-
-	x_position = (DISPLAY_X_MAX / 2) -5 - (((strlen(tempString)) / 2) * NUM_X_PIXEL_PER_CHAR);
-	y_position = 251;
-	Draw_string_new(x_position, y_position, tempString, COLOUR_BLACK, MEDIUM_FONT);
-	Draw_Rect_Box(70,246,160,286,COLOUR_BLACK);
-
-	if(Magnetometer_Calib_Table[Magnetometer_Condition_selection].curr_voltage < 500)
-	{
-		sprintf(tempString,"%d°",(int_16)(Magnetometer_Calib_Table[Magnetometer_Condition_selection].curr_voltage));
-		y_position = 300;
-		x_position = (DISPLAY_X_MAX / 2) -5 - (((strlen(tempString)) / 2) * NUM_X_PIXEL_PER_CHAR);
-		Draw_string_new(x_position, y_position, tempString, COLOUR_BLACK, MEDIUM_FONT);
-	}
-
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Create_accelerometer_calibration_screen_content
- * Brief:       This will add device details screen content in frame buffer
- * Parameter:   None
- * Return:      None
------------------------------------------------------------------------------*/
-static void Create_accelerometer_calibration_screen_content(void)
-{
-
-	uint_16 y_position;
-
-	if(accelerometer_calibration_screen == ACC_CALIBRATION_ACC_SCREEN_DOWN)
-	{
-		y_position = 175;
-		Draw_string_new(63,y_position,"CONDITION 1:",COLOUR_BLACK, MEDIUM_FONT);
-		Draw_string_new(53, y_position + 30, "SCREEN DOWN", COLOUR_BLACK, MEDIUM_FONT);
-	}
-	else if(accelerometer_calibration_screen == ACC_CALIBRATION_ACC_SCREEN_UP)
-	{
-		y_position = 175;
-		Draw_string_new(63,y_position,"CONDITION 2:",COLOUR_BLACK, MEDIUM_FONT);
-		Draw_string_new(68, y_position + 30, "SCREEN UP", COLOUR_BLACK, MEDIUM_FONT);
-	}
-	else if(accelerometer_calibration_screen == ACC_CALIBRATION_ACC_TIP_POINT_DOWN)
-	{
-		y_position = 175;
-		Draw_string_new(63,y_position,"CONDITION 3:",COLOUR_BLACK, MEDIUM_FONT);
-		Draw_string_new(43, y_position + 30, "SCREEN UP AT 45", COLOUR_BLACK, MEDIUM_FONT);
-	}
-	else if(accelerometer_calibration_screen == ACC_CALIBRATION_ACC_TIP_POINT_UP)
-	{
-		y_position = 175;
-		Draw_string_new(63,y_position,"CONDITION 4:",COLOUR_BLACK, MEDIUM_FONT);
-		Draw_string_new(60, y_position + 30, "SCREEN DOWN AT 45", COLOUR_BLACK, MEDIUM_FONT);
-	}
-	else if(accelerometer_calibration_screen == ACC_CALIBRATION_ACC_SCREEN_FACE_IN)
-	{
-		y_position = 175;
-		Draw_string_new(63,y_position,"CONDITION 5:",COLOUR_BLACK, MEDIUM_FONT);
-		Draw_string_new(42, y_position + 30, "SCREEN FACE IN", COLOUR_BLACK, MEDIUM_FONT);
-	}
-	else if(accelerometer_calibration_screen == ACC_CALIBRATION_ACC_SCREEN_FACE_OUT)
-	{
-		y_position = 175;
-		Draw_string_new(63,y_position,"CONDITION 6:",COLOUR_BLACK, MEDIUM_FONT);
-		Draw_string_new(36, y_position + 30, "SCREEN FACE OUT", COLOUR_BLACK, MEDIUM_FONT);
-	}
-
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Create_compass_calibration_screen_content
- * Brief:       This will add device details screen content in frame buffer
- * Parameter:   None
- * Return:      None
------------------------------------------------------------------------------*/
-static void Create_compass_calibration_screen_content(void)
-{
-
-	uint_16 y_position;
-
-	//	if(compass_calibration_screen == COMPASS_CALIBRATION_START_SCREEN)
-	//	{
-	y_position = 75;
-	Draw_string_new(25,y_position,"DO THE FOLLOWING ",COLOUR_BLACK, MEDIUM_FONT);
-	Draw_string_new(25, y_position + 20, "FOR 15 SECONDS", COLOUR_BLACK, MEDIUM_FONT);
-	Draw_string_new(38, 182, "ROLL", COLOUR_BLACK, MEDIUM_FONT);
-	Draw_string_new(38, 244, "SPIN", COLOUR_BLACK, MEDIUM_FONT);
-	Draw_string_new(38, 306, "FLIP", COLOUR_BLACK, MEDIUM_FONT);
-	Draw_image(130, 155, COMPASS_ALL_ICON_NUM, COLOUR_BLACK);
-
-	Create_Footer("BACK",strlen("BACK"), "",strlen(""));
-	//	}
-	//	else if(compass_calibration_screen == COMPASS_CALIBRATION_ROLL_SCREEN)
-	//	{
-	//		y_position = 120;
-	//		Draw_string_new(97,y_position,"ROLL",COLOUR_BLACK, MEDIUM_FONT);
-	//		Draw_string_new(58, y_position + 20, "(5 SECONDS)", COLOUR_BLACK, MEDIUM_FONT);
-	//		Draw_image(50, 187, COMPASS_ROLL_ICON_NUM, COLOUR_BLACK);
-	//		Create_Footer("CANCEL",strlen("CANCEL"), "",strlen(""));	
-	//
-	//	}
-	//	else if(compass_calibration_screen == COMPASS_CALIBRATION_SPIN_SCREEN)
-	//	{
-	//		y_position = 120;
-	//		Draw_string_new(97,y_position,"SPIN",COLOUR_BLACK, MEDIUM_FONT);
-	//		Draw_string_new(58, y_position + 20, "(5 SECONDS)", COLOUR_BLACK, MEDIUM_FONT);
-	//		Draw_image(55, 212, COMPASS_SPIN_ICON_NUM, COLOUR_BLACK);
-	//		Create_Footer("CANCEL",strlen("CANCEL"), "",strlen(""));	
-	//
-	//	}
-	//	else if(compass_calibration_screen == COMPASS_CALIBRATION_FLIP_SCREEN)
-	//	{
-	//		y_position = 120;
-	//		Draw_string_new(97,y_position,"FLIP",COLOUR_BLACK, MEDIUM_FONT);
-	//		Draw_string_new(58, y_position + 20, "(5 SECONDS)", COLOUR_BLACK, MEDIUM_FONT);
-	//		Draw_image(81, 187, COMPASS_FLIP_ICON_NUM, COLOUR_BLACK);
-	//		Create_Footer("CANCEL",strlen("CANCEL"), "",strlen(""));	
-	//
-	//	}
-
-}
-
-/*-----------------------------------------------------------------------------* 
  * Function:    gps_toggle
  * Brief:       Turn gps on or off
  * Parameter:   None
@@ -1022,23 +318,23 @@ void display_bluetooth_toggle(void)
 
 	Settings_Data.BLE_power_status = !(Settings_Data.BLE_power_status);
 	display_Settings_Main();
-
-	if(Settings_Data.BLE_power_status == BLUETOOTH_ON)
-	{
+	
+    if(Settings_Data.BLE_power_status == BLUETOOTH_ON)
+    {
 		ble_transmission_status = BLUETOOTH_INITIALIZING;
 		display_Bluetooth_main();
-		Ble_Module_init(); 
-		ble_transmission_status = BLUETOOTH_DEVICE_NOT_CONNECTED;
-		BLE_host_wakeup_flag = NO;
-		lwgpio_int_enable(&BLE_host_interrupt, TRUE );  	
-	}
-	else
-	{
-		lwgpio_int_enable(&BLE_host_interrupt, FALSE );
-		Stop_BLE_bulk_transfer();
-	}
-	display_Settings_Main();
-	Write_Data_file_information_To_Sdcard();
+    	Ble_Module_init(); 
+    	ble_transmission_status = BLUETOOTH_DEVICE_NOT_CONNECTED;
+     	BLE_host_wakeup_flag = NO;
+    	lwgpio_int_enable(&BLE_host_interrupt, TRUE );  	
+    }
+    else
+    {
+    	lwgpio_int_enable(&BLE_host_interrupt, FALSE );
+    	Stop_BLE_bulk_transfer();
+    }
+    display_Settings_Main();
+    Write_Data_file_information_To_Sdcard();
 }
 
 /*-----------------------------------------------------------------------------* 
@@ -1393,177 +689,6 @@ void Favourites_List_Key_down(void)
  * Parameter:   None
  * Return:      None
  -----------------------------------------------------------------------------*/
-void IRDMS_Condition_Key_up(void)
-{
-	IRDMS_Condition_selection++;
-	IRDMS_Condition_selection = IRDMS_Condition_selection % NUM_OF_IRDMS_CONDITION;
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Mainmenu_Key_down
- * Brief:       increment Main menu selection
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void IRDMS_Condition_Key_down(void)
-{
-	if (IRDMS_Condition_selection == 0)
-		IRDMS_Condition_selection = NUM_OF_IRDMS_CONDITION - 1;
-	else
-		IRDMS_Condition_selection--;
-
-	IRDMS_Condition_selection = IRDMS_Condition_selection % NUM_OF_IRDMS_CONDITION;
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Mainmenu_Key_up
- * Brief:       decrement Main menu selection
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void Pressure_Condition_Key_up(void)
-{
-	Pressure_Condition_selection++;
-	Pressure_Condition_selection = Pressure_Condition_selection % NUM_OF_PRESSURE_CONDITION;
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Mainmenu_Key_down
- * Brief:       increment Main menu selection
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void Pressure_Condition_Key_down(void)
-{
-	if (Pressure_Condition_selection == 0)
-		Pressure_Condition_selection = NUM_OF_IRDMS_CONDITION - 1;
-	else
-		Pressure_Condition_selection--;
-
-	Pressure_Condition_selection = Pressure_Condition_selection % NUM_OF_PRESSURE_CONDITION;
-}
-
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Accelerometer_Condition_Key_up
- * Brief:       decrement Main menu selection
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void Accelerometer_Condition_Key_up(void)
-{
-	Accelerometer_Condition_selection++;
-	Accelerometer_Condition_selection = Accelerometer_Condition_selection % NUM_OF_ACC_CONDITION;
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Mainmenu_Key_down
- * Brief:       increment Main menu selection
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void Accelerometer_Condition_Key_down(void)
-{
-	if (Accelerometer_Condition_selection == 0)
-		Accelerometer_Condition_selection = NUM_OF_ACC_CONDITION - 1;
-	else
-		Accelerometer_Condition_selection--;
-
-	Accelerometer_Condition_selection = Accelerometer_Condition_selection % NUM_OF_ACC_CONDITION;
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Accelerometer_Condition_Key_up
- * Brief:       decrement Main menu selection
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void Magnetometer_Condition_Key_up(void)
-{
-	Magnetometer_Condition_selection++;
-	Magnetometer_Condition_selection = Magnetometer_Condition_selection % NUM_OF_MAG_CONDITION;
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Mainmenu_Key_down
- * Brief:       increment Main menu selection
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void Magnetometer_Condition_Key_down(void)
-{
-	if (Magnetometer_Condition_selection == 0)
-		Magnetometer_Condition_selection = NUM_OF_MAG_CONDITION - 1;
-	else
-		Magnetometer_Condition_selection--;
-
-	Magnetometer_Condition_selection = Magnetometer_Condition_selection % NUM_OF_MAG_CONDITION;
-}
-
-
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Mainmenu_Key_up
- * Brief:       decrement Main menu selection
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void ROS1_Condition_Key_up(void)
-{
-	ROS_Condition_selection++;
-	ROS_Condition_selection = ROS_Condition_selection % NUM_OF_ROS_CONDITION;
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Mainmenu_Key_down
- * Brief:       increment Main menu selection
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void ROS1_Condition_Key_down(void)
-{
-	if (ROS_Condition_selection == 0)
-		ROS_Condition_selection = NUM_OF_ROS_CONDITION - 1;
-	else
-		ROS_Condition_selection--;
-
-	ROS_Condition_selection = ROS_Condition_selection % NUM_OF_ROS_CONDITION;
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Mainmenu_Key_up
- * Brief:       decrement Main menu selection
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void ROS2_Condition_Key_up(void)
-{
-	ROS_Condition_selection++;
-	ROS_Condition_selection = ROS_Condition_selection % NUM_OF_ROS_CONDITION;
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Mainmenu_Key_down
- * Brief:       increment Main menu selection
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
-void ROS2_Condition_Key_down(void)
-{
-	if (ROS_Condition_selection == 0)
-		ROS_Condition_selection = NUM_OF_ROS_CONDITION - 1;
-	else
-		ROS_Condition_selection--;
-
-	ROS_Condition_selection = ROS_Condition_selection % NUM_OF_ROS_CONDITION;
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Mainmenu_Key_up
- * Brief:       decrement Main menu selection
- * Parameter:   None
- * Return:      None
- -----------------------------------------------------------------------------*/
 void Mainmenu_Key_up(void)
 {
 	if (Main_menu_selection == 0)
@@ -1792,52 +917,51 @@ void Settingsmenu_Key_down(void)
  -----------------------------------------------------------------------------*/
 float battery_Voltage_Check(void)
 {
-	//	uint_8 status = 5;
+//	uint_8 status = 5;
 
 	uint_16 bat_volt = 0;
+	float V_Bat = 0;
+//	static battery_low_check_count = 0;
 
-	//	static battery_low_check_count = 0;
+	bat_volt = Read_Battery();
+	Data_header.Battery_Voltage =  V_Bat = (bat_volt) * BATTERY_VOLTAGE_MULTIPILER;
 
 
-	Data_header.Battery_Voltage =  Read_Battery_Capacity();
+//	if (V_Bat < Settings_Data.battery_threshold)
+//	{
+//		printf("Battery Low\n");
+////		if(Core_clock_selection == ACQUISITION_MODE)
+////		{        	
+////			De_Init_Hw_Timer();
+////			Switch_to_idle_mode();
+////		}
+//		
+//		Low_battery_shutdown();
+//	}
 	
-	Settings_Data.battery_threshold = 10.0;
-
-	if (Data_header.Battery_Voltage < Settings_Data.battery_threshold)
-	{
-		printf("Battery Low\n");
-		//		if(Core_clock_selection == ACQUISITION_MODE)
-		//		{        	
-		//			De_Init_Hw_Timer();
-		//			Switch_to_idle_mode();
-		//		}
-
-		Low_battery_shutdown();
-	}
-
-	//	if (V_Bat < Settings_Data.battery_threshold)
-	//	{
-	//		battery_low_check_count++;
-	//	}
-	//	else
-	//	{
-	//		battery_low_check_count = 0;
-	//	}
-	//	//    }
-	//	if (battery_low_check_count >= 1)
-	//	{
-	//		Battery_low_status = 1;
-	//	}
-	//	if (usb_test_flag == 0)
-	//	{
-	//		Handle_battery_related_issues();
-	//	}
-	//	else
-	//	{
-	//		battery_low_check_count = 0;
-	//		Battery_adc_stucked_and_shows_zero = 0;
-	//	}
-	return Data_header.Battery_Voltage;
+//	if (V_Bat < Settings_Data.battery_threshold)
+//	{
+//		battery_low_check_count++;
+//	}
+//	else
+//	{
+//		battery_low_check_count = 0;
+//	}
+//	//    }
+//	if (battery_low_check_count >= 1)
+//	{
+//		Battery_low_status = 1;
+//	}
+//	if (usb_test_flag == 0)
+//	{
+//		Handle_battery_related_issues();
+//	}
+//	else
+//	{
+//		battery_low_check_count = 0;
+//		Battery_adc_stucked_and_shows_zero = 0;
+//	}
+	return V_Bat;
 }
 
 /*-----------------------------------------------------------------------------* 
@@ -1848,25 +972,25 @@ float battery_Voltage_Check(void)
  -----------------------------------------------------------------------------*/
 void Battery_checkon_powerup(void)
 {
-
+	
 	uint_16 bat_volt = 0;
 	float V_Bat = 0;
-
+	
 #if 1
-
-	//	Enable_all_sensors();	
-	//	ui_timer_start(100);
+	
+//	Enable_all_sensors();	
+//	ui_timer_start(100);
 	ADC_Init();
 	bat_volt = Read_Battery();
 	Data_header.Battery_Voltage =  V_Bat = (bat_volt) * BATTERY_VOLTAGE_MULTIPILER;
-
+	
 	if (V_Bat < Settings_Data.battery_threshold)
 	{
 
 		Buzzer_Init();
 		Buzzer_On();
 		Buzzer_Off();
-
+		
 		GPS_Current_State = GPS_POWER_ON;
 		ui_timer_init();
 		Buzzer_Short_Beep(1);
@@ -1874,15 +998,15 @@ void Battery_checkon_powerup(void)
 
 		dispaly_battery_low();
 		Kill_Controller_Init();
-		while(1)
-		{};
+		while(1);
+
 	}
 	else
 	{	
 		ADC_deinit();
-		//		Disable_all_sensors();
+//		Disable_all_sensors();
 	}
-
+		
 #endif
 
 }
@@ -1897,17 +1021,17 @@ void Enable_all_sensors(void)
 {
 	power_rail_init();
 	power_rail_enable();
-	//	power_rail_enable();
-	//	ADC_Init();
+//	power_rail_enable();
+//	ADC_Init();
 	lsm303_i2c0_init();
 	Start_LSM();
-
+	
 	gps_gpio_init();
 	gps_regulator_init(); 
 	gps_power_on();
 	lwgpio_set_value(&GPS_RST, LWGPIO_VALUE_HIGH);
 	gpsCC4000OStartFixes(); 
-
+	
 	if((GPS_Current_State == GPS_LOCKING)||(GPS_Current_State == GPS_POWER_ON))
 	{
 		lwgpio_int_enable(&FIX_AVL, FALSE );
@@ -1927,7 +1051,7 @@ void Enable_all_sensors(void)
  -----------------------------------------------------------------------------*/
 void Disable_all_sensors(void)
 {
-	//	ADC_deinit();
+//	ADC_deinit();
 	Stop_LSM();
 	Lsm303_deinit();
 	gpsCC4000Off();
@@ -1949,7 +1073,8 @@ void Create_Header(void)
 	static uint_8 status = 5;
 
 	float V_Bat = 0;
-	//	char temp[16];
+	
+//	char temp[16];
 	//    Rect_Fill(DISPLAY_HEADER_X_MIN, DISPLAY_HEADER_Y_MIN, DISPLAY_HEADER_X_MAX,
 	//            DISPLAY_HEADER_Y_MAX, COLOUR_BLACK);
 
@@ -1959,31 +1084,31 @@ void Create_Header(void)
 	}
 	else
 	{
-		Data_header.Battery_Voltage = Read_Battery_Capacity();
-		status = BATTERY_HALF_FULL;
-//		if(V_Bat < Battery_minimum_voltage_check) 
-//		{
-//			Battery_minimum_voltage_check = V_Bat;
-//		}
-//
-//		if(Battery_minimum_voltage_check >= BATTERY_FULL_VOLTAGE)
-//		{
-//			status = BATTERY_FULL;
-//		}
-//		else if((Battery_minimum_voltage_check < BATTERY_FULL_VOLTAGE) && (Battery_minimum_voltage_check >= BATTERY_HALF_FULL_VOLTAGE))
-//		{
-//			status = BATTERY_HALF_FULL;
-//		}
-//		else
-//		{
-//			status = BATTERY_NEARLY_EMPTY;
-//		}
+		V_Bat = battery_Voltage_Check();
+		
+		if(V_Bat < Battery_minimum_voltage_check) 
+		{
+			Battery_minimum_voltage_check = V_Bat;
+		}
+		
+		if(Battery_minimum_voltage_check >= BATTERY_FULL_VOLTAGE)
+		{
+			status = BATTERY_FULL;
+		}
+		else if((Battery_minimum_voltage_check < BATTERY_FULL_VOLTAGE) && (Battery_minimum_voltage_check >= BATTERY_HALF_FULL_VOLTAGE))
+		{
+			status = BATTERY_HALF_FULL;
+		}
+		else
+		{
+			status = BATTERY_NEARLY_EMPTY;
+		}
 	}
+	
 
+	
 
-
-
-
+	
 
 #if BATTERY_VALUE_DISPLAY_ENABLE 
 	Draw_string_new(190, 4, temp, COLOUR_BLACK, MEDIUM_FONT);
@@ -2060,6 +1185,7 @@ void Create_Title(char * aString, uint16_t string_length)
 		printf("Create_Title overflow\n");
 		while(1)
 		{
+
 		}
 	}
 
@@ -2072,35 +1198,6 @@ void Create_Title(char * aString, uint16_t string_length)
 	}
 	//    title_y = DISPLAY_TITLE_Y_MIN + (DISPLAY_TITLE_WIDTH / 14);
 	title_y = DISPLAY_TITLE_Y_MIN ;
-
-	Draw_string_new(title_x, title_y, (uint_8 *) aString, COLOUR_BLACK,MEDIUM_FONT);
-}
-
-/*-----------------------------------------------------------------------------* 
- * Function:    Create_Title
- * Brief:       Create Title data to frame buffer
- * Parameter:   Title name
- * Return:      None
- -----------------------------------------------------------------------------*/
-void Create_Title_calib(char * aString, uint16_t string_length,uint_16 title_x,uint_16 title_y)
-{
-	//	uint_16 title_x, title_y;
-
-	if(string_length>18)
-	{
-		printf("Create_Title overflow\n");
-		while(1)
-		{
-		}
-	}
-
-	//Find Starting pixel to print title
-	title_x = (DISPLAY_X_MAX / 2) - ((string_length / 2) * NUM_X_PIXEL_PER_CHAR_MEDIUM);
-	if(title_x>DISPLAY_X_MAX)
-	{
-		printf("\nCreate_Title buffer>240\n");
-		title_x=1;    	
-	}
 
 	Draw_string_new(title_x, title_y, (uint_8 *) aString, COLOUR_BLACK,MEDIUM_FONT);
 }
@@ -2143,25 +1240,23 @@ void Create_Footer(char * leftMenu,uint16_t left_len, char * rightMenu,uint16_t 
 	}
 
 	//Draw left menu
-	menu_x = (DISPLAY_X_MAX / 4) - ((left_len / 2) * NUM_X_PIXEL_PER_CHAR) - 14;
-
+	menu_x = (DISPLAY_X_MAX / 4) - ((left_len / 2) * NUM_X_PIXEL_PER_CHAR) - 10;
 	if(menu_x>DISPLAY_X_MAX)
 	{
 		printf("\nCreate_Footer Overflow Error1\n");
 		menu_x=1;
 	}
 	menu_y = DISPLAY_FOOTER_Y_MIN + (DISPLAY_FOOTER_WIDTH / 7);
-	menu_y = menu_y - 3;
 	Draw_string_new(menu_x, menu_y, (uint_8 *) leftMenu, COLOUR_WHITE,MEDIUM_FONT);
 
 	//Draw right menu
-	menu_x = (3 * DISPLAY_X_MAX / 4) - ((right_len / 2) * NUM_X_PIXEL_PER_CHAR) + 13;
+	menu_x = (3 * DISPLAY_X_MAX / 4) - ((right_len / 2) * NUM_X_PIXEL_PER_CHAR) + 10;
 	if(menu_x>DISPLAY_X_MAX)
 	{
 		printf("\nCreate_Footer Overflow Error2\n");
 		menu_x=1;
 	}
-	//	menu_y = DISPLAY_FOOTER_Y_MIN + (DISPLAY_FOOTER_WIDTH / 7);
+	menu_y = DISPLAY_FOOTER_Y_MIN + (DISPLAY_FOOTER_WIDTH / 7);
 	Draw_string_new(menu_x, menu_y, (uint_8 *) rightMenu, COLOUR_WHITE,MEDIUM_FONT);
 
 }
@@ -2176,7 +1271,7 @@ void Add_Item_To_Menu(const char *menu_data, uint_8 menu_position,
 {
 	uint_16 y_position_min, y_position_max;
 	char menu_Text[22];
-
+	
 	memset(menu_Text,0x00,20);
 	strncpy(menu_Text,menu_data,19);
 	if(strlen(menu_Text)>19)
@@ -2226,7 +1321,7 @@ void Add_Item_To_Menu(const char *menu_data, uint_8 menu_position,
 		}
 
 		Draw_string_new((DISPLAY_CONTAINER_X_MIN + NUM_X_PIXEL_PER_CHAR),
-				(y_position_min + (DISPLAY_MENU_WIDTH / 4))-4, (uint_8 *) menu_Text, COLOUR_WHITE ,MEDIUM_FONT);
+				(y_position_min + (DISPLAY_MENU_WIDTH / 4)), (uint_8 *) menu_Text, COLOUR_WHITE ,MEDIUM_FONT);
 		//		}
 
 
@@ -2261,7 +1356,7 @@ void Add_Item_To_Menu(const char *menu_data, uint_8 menu_position,
 		//		else
 		//		{
 		Draw_string_new((DISPLAY_CONTAINER_X_MIN + NUM_X_PIXEL_PER_CHAR),
-				(y_position_min + (DISPLAY_MENU_WIDTH / 4))-4, (uint_8 *) menu_Text, COLOUR_BLACK, MEDIUM_FONT);
+				(y_position_min + (DISPLAY_MENU_WIDTH / 4)), (uint_8 *) menu_Text, COLOUR_BLACK, MEDIUM_FONT);
 		//		}
 
 
@@ -2335,57 +1430,57 @@ void select_graph(uint_16 * Pixels_buff,uint_8 *tempChart)
 	}
 
 }
-///*-----------------------------------------------------------------------------* 
-// * Function:    create_Snow_Profile_Chart
-// * Brief:       This will draw graph in the frame buffer
-// * Parameter:   None
-// * Return:      None
-// -----------------------------------------------------------------------------*/
-//static void create_Snow_Profile_Chart(void)
-//{
-//	uint_16 x1_position = DISPALY_GRAPH_X_MIN, y1_position = DISPALY_GRAPH_Y_MIN;
-//
-//	uint_8 tempChart[GRAPH_RAW_PIXEL_COUNT];
-//
-//	//    graph_to_bitmap(tempChart);
-//	//    Pixelated_Means(tempChart);
-//
-//	// endDepth in processed Data file
-//	EndDepth = Pixels_buffer[5*GRAPH_RAW_PIXEL_COUNT] ;
-//	
-//	switch(Settings_Data.default_gragh_view)
-//	{
-//	case GRAPH_DETAIL_0:
-//		select_graph(Pixels_buffer,tempChart);
-//		break;
-//	case GRAPH_DETAIL_1:
-//		select_graph(Pixels_buffer+(1*GRAPH_RAW_PIXEL_COUNT),tempChart);
-//		break;
-//	case GRAPH_DETAIL_2:
-//		select_graph(Pixels_buffer+(2*GRAPH_RAW_PIXEL_COUNT),tempChart);
-//		break;
-//	case GRAPH_DETAIL_3:
-//		select_graph(Pixels_buffer+(3*GRAPH_RAW_PIXEL_COUNT),tempChart);
-//		break;
-//	case GRAPH_DETAIL_4:
-//		select_graph(Pixels_buffer+(4*GRAPH_RAW_PIXEL_COUNT),tempChart);
-//		break;
-//	default:
-//		break;
-//
-//
-//	}
-//
-//	for (uint16_t i = 0; i < GRAPH_RAW_PIXEL_COUNT; i++)
-//	{
-//
-//		Draw_Line(x1_position, y1_position + i, x1_position + tempChart[i], y1_position + i,
-//				COLOUR_BLACK);
-//	}
-//
-//	    Rect_fill_with_dithered_lines(x1_position+1,DISPALY_GRAPH_Y_MIN+ (EndDepth/5), DISPLAY_X_MAX - 6 , DISPLAY_Y_MAX - DISPLAY_FOOTER_WIDTH - 6, COLOUR_BLACK );
-//
-//}
+/*-----------------------------------------------------------------------------* 
+ * Function:    create_Snow_Profile_Chart
+ * Brief:       This will draw graph in the frame buffer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+static void create_Snow_Profile_Chart(void)
+{
+	uint_16 x1_position = DISPALY_GRAPH_X_MIN, y1_position = DISPALY_GRAPH_Y_MIN;
+
+	uint_8 tempChart[GRAPH_RAW_PIXEL_COUNT];
+
+	//    graph_to_bitmap(tempChart);
+	//    Pixelated_Means(tempChart);
+
+	// endDepth in processed Data file
+	EndDepth = Pixels_buffer[5*GRAPH_RAW_PIXEL_COUNT] ;
+	
+	switch(Settings_Data.default_gragh_view)
+	{
+	case GRAPH_DETAIL_0:
+		select_graph(Pixels_buffer,tempChart);
+		break;
+	case GRAPH_DETAIL_1:
+		select_graph(Pixels_buffer+(1*GRAPH_RAW_PIXEL_COUNT),tempChart);
+		break;
+	case GRAPH_DETAIL_2:
+		select_graph(Pixels_buffer+(2*GRAPH_RAW_PIXEL_COUNT),tempChart);
+		break;
+	case GRAPH_DETAIL_3:
+		select_graph(Pixels_buffer+(3*GRAPH_RAW_PIXEL_COUNT),tempChart);
+		break;
+	case GRAPH_DETAIL_4:
+		select_graph(Pixels_buffer+(4*GRAPH_RAW_PIXEL_COUNT),tempChart);
+		break;
+	default:
+		break;
+
+
+	}
+
+	for (uint16_t i = 0; i < GRAPH_RAW_PIXEL_COUNT; i++)
+	{
+
+		Draw_Line(x1_position, y1_position + i, x1_position + tempChart[i], y1_position + i,
+				COLOUR_BLACK);
+	}
+
+	    Rect_fill_with_dithered_lines(x1_position+1,DISPALY_GRAPH_Y_MIN+ (EndDepth/5), DISPLAY_X_MAX - 6 , DISPLAY_Y_MAX - DISPLAY_FOOTER_WIDTH - 6, COLOUR_BLACK );
+
+}
 
 
 /*-----------------------------------------------------------------------------* 
@@ -2397,31 +1492,44 @@ void select_graph(uint_16 * Pixels_buff,uint_8 *tempChart)
 static void Create_Mainmenu_Content(void)
 {
 
-
 	for (uint_8 i = 0; i < NUM_OF_MAINMENU_ITEM; i++)
 	{
 		if (i == Main_menu_selection)
-		{			
+		{
 			Add_Item_To_Menu(Mainmenu_Table[i].Menu_String, i, MENU_SELECTED);
-			if(Calib_status[i] == COMPLETED)
-			{
-				Draw_string_new(210,(10 + DISPLAY_CONTAINER_Y_MIN + (i * DISPLAY_MENU_WIDTH )), "*", COLOUR_WHITE ,MEDIUM_FONT);
-			}								 
 		}
 		else
 		{
 			Add_Item_To_Menu(Mainmenu_Table[i].Menu_String, i, MENU_NOT_SELECTED);
-			if(Calib_status[i] == COMPLETED)
-			{
-				Draw_string_new(210,(10 + DISPLAY_CONTAINER_Y_MIN + (i * DISPLAY_MENU_WIDTH )), "*", COLOUR_BLACK ,MEDIUM_FONT);
-			}
 		}
 
 	}
 
 }
 
+/*-----------------------------------------------------------------------------* 
+ * Function:    Create_Settings_Selection_Content
+ * Brief:       This will settings selection menu content in frame buffer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+static void Create_Settings_Selection_Content(void)
+{
 
+	for (uint_8 i = 0; i < NUM_OF_SETTINGSSELECTION_ITEM; i++)
+	{
+		if (i == Settings_selection_menu_selection)
+		{
+			Add_Item_To_Menu(SettingsSelection_Table[i].Menu_String, i, MENU_SELECTED);
+		}
+		else
+		{
+			Add_Item_To_Menu(SettingsSelection_Table[i].Menu_String, i, MENU_NOT_SELECTED);
+		}
+
+	}
+
+}
 /*-----------------------------------------------------------------------------* 
  * Function:    Create_MultipleTestmenu_Content
  * Brief:       This will create multiple test menu content in frame buffer
@@ -2462,8 +1570,229 @@ static void Create_MultipleTestmenu_Content(void)
 	}
 
 }
+/*-----------------------------------------------------------------------------* 
+ * Function:    Create_error_screen_during_test_Content
+ * Brief:       This will create error screen during test content in frame buffer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+static void Create_error_screen_during_test_Content(void)
+{
+	uint_16 y_position, cnt = 21;
+	
+	y_position = DISPLAY_CONTAINER_Y_MIN + (DISPLAY_MENU_WIDTH*2);
+	Draw_string((DISPLAY_CONTAINER_X_MAX - Get_string_pixel_length("TEST ERROR!", MEDIUM_FONT)- 10)/2 - 10,
+			y_position, (uint_8 *) "TEST ERROR!", COLOUR_BLACK);
+	
+	if(type_of_error == TOO_SLOW_ERROR_CONDITION)
+	{
+		y_position = DISPLAY_CONTAINER_Y_MIN + (DISPLAY_MENU_WIDTH*3);
+		Draw_string((DISPLAY_CONTAINER_X_MAX - Get_string_pixel_length("TOO SLOW!!", MEDIUM_FONT))/2 - 10,
+				y_position, (uint_8 *) "TOO SLOW!!", COLOUR_BLACK);
+
+	}
+	else if(type_of_error == TOO_FAST_ERROR_CONDITION)
+	{
+		y_position = DISPLAY_CONTAINER_Y_MIN + (DISPLAY_MENU_WIDTH*3);
+		Draw_string((DISPLAY_CONTAINER_X_MAX - Get_string_pixel_length("TOO FAST!!", MEDIUM_FONT))/2 - 10,
+				y_position, (uint_8 *) "TOO FAST!!", COLOUR_BLACK);
+	}
+	else
+	{
+		y_position = DISPLAY_CONTAINER_Y_MIN + (DISPLAY_MENU_WIDTH*3);
+		Draw_string((DISPLAY_CONTAINER_X_MAX - Get_string_pixel_length("PROBE SMOOTHLY,", MEDIUM_FONT))/2 - 10,
+				y_position, (uint_8 *) "PROBE SMOOTHLY,", COLOUR_BLACK);
+
+		y_position += cnt;
+		Draw_string((DISPLAY_CONTAINER_X_MAX - Get_string_pixel_length("AND CHECK TO MAKE", MEDIUM_FONT))/2 - 10,
+				y_position, (uint_8 *) "AND CHECK TO MAKE", COLOUR_BLACK);
+
+		y_position += cnt;
+		Draw_string((DISPLAY_CONTAINER_X_MAX - Get_string_pixel_length("SURE NOTHING IS", MEDIUM_FONT))/2 - 10,
+				y_position, (uint_8 *) "SURE NOTHING IS", COLOUR_BLACK);
+
+		y_position += cnt;
+		Draw_string((DISPLAY_CONTAINER_X_MAX - Get_string_pixel_length("OBSTRUCTING THE", MEDIUM_FONT))/2 - 10,
+				y_position, (uint_8 *) "OBSTRUCTING THE", COLOUR_BLACK);
+
+		y_position += cnt;
+		Draw_string((DISPLAY_CONTAINER_X_MAX - Get_string_pixel_length("RANGE FINDER IN", MEDIUM_FONT))/2 - 10,
+				y_position, (uint_8 *) "RANGE FINDER IN", COLOUR_BLACK);
+
+		y_position += cnt;
+		Draw_string((DISPLAY_CONTAINER_X_MAX - Get_string_pixel_length("THE HANDLE.", MEDIUM_FONT))/2 - 10,
+				y_position, (uint_8 *) "THE HANDLE.", COLOUR_BLACK);
+	}
 
 
+
+
+}
+
+/*-----------------------------------------------------------------------------* 
+ * Function:    Create_Settingsmenu_Content
+ * Brief:       This will create sett menu content in frame buffer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+static void Create_Settingsmenu_Content(void)
+{
+	char temp_string[16];
+	
+	for (uint_8 i = 0; i < NUM_OF_SETTINGSMENU_ITEM; i++)
+	{
+		if (i == Settings_menu_selection)
+		{
+			Add_Item_To_Menu(Settingsmenu_Table[i].Menu_String, i, MENU_SELECTED);
+		}
+		else
+		{
+			Add_Item_To_Menu(Settingsmenu_Table[i].Menu_String, i, MENU_NOT_SELECTED);
+		}
+
+	}
+
+	uint_8 x_position, y_position;
+	x_position = DISPLAY_CONTAINER_X_MAX - (NUM_X_PIXEL_PER_CHAR*5)-25;
+	if((x_position < 1) || (x_position >240))
+	{
+		printf("\n SETTINGS MENU ADD ITEM TO MENU ERROR.... BUFFER SIZE EXCEEDED!! ");
+		while(1)
+		{
+
+		}
+	}
+	y_position = 60;
+
+	Draw_favourites_icons(x_position, y_position+DISPLAY_MENU_WIDTH, GRAY,  COLOUR_WHITE);
+	Draw_favourites_icons(x_position, y_position+(DISPLAY_MENU_WIDTH*2), GRAY,  COLOUR_WHITE);
+	//Draw_favourites_icons(x_position, y_position+(DISPLAY_MENU_WIDTH*3), GRAY,  COLOUR_WHITE);
+
+	//Draw icons content
+	y_position = y_position - 2;
+	if(Settings_Data.GPS_power_status == GPS_ON)
+	{
+
+		Draw_string_new((DISPLAY_CONTAINER_X_MAX - (NUM_X_PIXEL_PER_CHAR*4)),
+				y_position+DISPLAY_MENU_WIDTH, (uint_8 *) "ON", COLOUR_BLACK,MEDIUM_FONT);	
+	}
+	else
+	{
+
+		Draw_string_new((DISPLAY_CONTAINER_X_MAX - (NUM_X_PIXEL_PER_CHAR*4)),
+				y_position+DISPLAY_MENU_WIDTH, (uint_8 *) "OFF", COLOUR_BLACK,MEDIUM_FONT);
+	}
+
+	if(Settings_Data.BLE_power_status == BLUETOOTH_ON)
+	{
+		Draw_string_new((DISPLAY_CONTAINER_X_MAX - (NUM_X_PIXEL_PER_CHAR*4)),
+				y_position+(DISPLAY_MENU_WIDTH*2), (uint_8 *) "ON", COLOUR_BLACK,MEDIUM_FONT);
+	}
+	else
+	{
+		Draw_string_new((DISPLAY_CONTAINER_X_MAX - (NUM_X_PIXEL_PER_CHAR*4)),
+				y_position+(DISPLAY_MENU_WIDTH*2), (uint_8 *) "OFF", COLOUR_BLACK,MEDIUM_FONT);
+	}
+	
+//	printf("\n Default_graph_view_selection %d",Default_graph_view_selection);
+	
+	sprintf(temp_string,"%d",Default_graph_view_selection+1);
+	if ( Settings_menu_selection == 3)
+	{
+		Draw_string_new((DISPLAY_CONTAINER_X_MAX - (NUM_X_PIXEL_PER_CHAR*4)),
+				y_position+(DISPLAY_MENU_WIDTH*3), (uint_8 *) temp_string, COLOUR_WHITE,MEDIUM_FONT);
+	}
+	else
+	{
+		Draw_string_new((DISPLAY_CONTAINER_X_MAX - (NUM_X_PIXEL_PER_CHAR*4)),
+				y_position+(DISPLAY_MENU_WIDTH*3), (uint_8 *) temp_string, COLOUR_BLACK,MEDIUM_FONT);
+	}
+
+	
+//	if(multiple_tests_status == MULTIPLE_TESTS_ON)
+//	{
+//		Draw_string_new((DISPLAY_CONTAINER_X_MAX - (NUM_X_PIXEL_PER_CHAR*4)),
+//				y_position+(DISPLAY_MENU_WIDTH*3), (uint_8 *) "ON", COLOUR_BLACK,MEDIUM_FONT);
+//	}
+//	else
+//	{
+//		Draw_string_new((DISPLAY_CONTAINER_X_MAX - (NUM_X_PIXEL_PER_CHAR*4)),
+//				y_position+(DISPLAY_MENU_WIDTH*3), (uint_8 *) "OFF", COLOUR_BLACK,MEDIUM_FONT);
+//	}
+
+}
+
+/*-----------------------------------------------------------------------------* 
+ * Function:    Create_Snowprofileoptionsmenu_Content
+ * Brief:       This will create snowprofileoptions menu content in frame buffer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+static void Create_Snowprofileoptions_Content(void)
+{
+	char tempString[16];
+	for (uint_8 i = 2; i < (NUM_OF_SNOWPROFILEOPTIONS_ITEM+2); i++)
+	{   	
+		if (i == Snow_profile_options_selection)
+		{
+			Create_Footer("BACK",strlen("BACK"),
+					Snowprofileoptions_Table[i-2].Menu_String,strlen(Snowprofileoptions_Table[i-2].Menu_String));
+			Add_Item_To_Menu("", i, MENU_SELECTED);
+
+			if(i==3)
+			{
+
+				sprintf(tempString, "%d", Data_header.Slope_Angle);
+				//       		 Rect_Fill(0,165,170,210, COLOUR_WHITE);
+				Rect_fill_with_horizontal_lines(0,170,170,211, COLOUR_WHITE);
+				Draw_Rect(0,168,170,208, COLOUR_BLACK);
+				Draw_favourites_icons(50, 180, ANGLE_ICON, COLOUR_WHITE);
+				Draw_favourites_icons(120, 180, ASPECT_ICON, COLOUR_WHITE);
+				Draw_string_new(70, 175, (uint_8 *) tempString, COLOUR_BLACK, MEDIUM_FONT);
+				Draw_string_new(140, 175, (uint_8 *) Data_header.Aspect, COLOUR_BLACK, MEDIUM_FONT);
+			}
+			if(i==4)
+			{
+
+				Rect_fill_with_horizontal_lines(0,210,170,290, COLOUR_WHITE);
+				Draw_Rect(0,208,170,288, COLOUR_BLACK);
+				Draw_string_new(50, 215, (uint_8 *)Data_header.Gps_data.Latitude, COLOUR_BLACK, MEDIUM_FONT);
+				Draw_string_new(50, 255, (uint_8 *) Data_header.Gps_data.Longitude, COLOUR_BLACK, MEDIUM_FONT);
+			}
+
+		}
+		else
+		{
+			Add_Item_To_Menu("", i, MENU_NOT_SELECTED);
+
+		}
+
+	}
+	if(Snow_profile_options_selection==2)
+	{
+		Rect_fill_with_horizontal_lines(169,128,205,159,COLOUR_WHITE);
+		Draw_favourites_icons(132,127, TOP_RECT_BLACK, COLOUR_BLACK);
+	}
+	else
+	{
+		Draw_favourites_icons(132,127, TOP_RECT_WHITE, COLOUR_BLACK);
+	}
+
+	if(Snow_profile_options_selection==6)
+	{
+		Rect_fill_with_horizontal_lines(170,299,205,330,COLOUR_WHITE);
+		Draw_favourites_icons(132,298, BOTTOM_RECT_BLACK, COLOUR_WHITE);
+	}
+	else
+	{
+		Draw_favourites_icons(132,298, BOTTOM_RECT_WHITE, COLOUR_BLACK);
+	}
+
+	//	 Rect_Fill(1,45,240,340,COLOUR_WHITE);
+	//	 Rect_Fill(172,132,240,333,COLOUR_WHITE);
+	//     Add_Item_To_Menu("", Snow_profile_options_selection, MENU_SELECTED);
+
+}
 
 /*-----------------------------------------------------------------------------* 
  * Function:    Change_Defualt_Gragh_View
@@ -2476,7 +1805,32 @@ void Change_Defualt_Gragh_View(void)
 	Settings_Data.default_gragh_view = Default_graph_view_selection; 
 }
 
-
+///*-----------------------------------------------------------------------------* 
+// * Function:    Create_New_Default_Graph_View_Content
+// * Brief:       This will create default graph view content in frame buffer
+// * Parameter:   None
+// * Return:      None
+// -----------------------------------------------------------------------------*/
+//static void Create_Default_Graph_View_Content(void)
+//{
+//
+//	uint_8 x_position = 220, y_position;
+//	for (uint_8 i = 0; i < NUM_OF_DEFAULTGRAPHVIEW_ITEM; i++)
+//	{
+//		if (i == Default_graph_view_selection)
+//		{
+//			Add_Item_To_Menu(Defaultgraphview_Table[i].Menu_String, i, MENU_SELECTED);
+//		}
+//		else
+//		{
+//			Add_Item_To_Menu(Defaultgraphview_Table[i].Menu_String, i, MENU_NOT_SELECTED);
+//		}
+//	}
+//
+//	
+//	y_position = DISPLAY_CONTAINER_Y_MIN + (Settings_Data.default_gragh_view * DISPLAY_MENU_WIDTH);
+//	Draw_favourites_icons(x_position, y_position + (DISPLAY_MENU_WIDTH / 4) + 5, FAV_ICON, COLOUR_WHITE);
+//}
 
 
 /*-----------------------------------------------------------------------------* 
@@ -2542,7 +1896,7 @@ static void Create_about_device_Content(void)
 
 	uint_16 x_position, y_position;
 	char  serilal_no[20] = {'\0'};
-
+	
 	sprintf(serilal_no,"SN: %s",Device_id);
 
 	x_position = (DISPLAY_X_MAX / 2) - 10 - (((strlen("AVATECH SP2")) / 2) * NUM_X_PIXEL_PER_CHAR);
@@ -2563,6 +1917,222 @@ static void Create_about_device_Content(void)
 
 }
 
+/*-----------------------------------------------------------------------------* 
+ * Function:    Create_Snow_Profiles_List_Content
+ * Brief:       This will add snow profile list screen content in frame buffer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+void Create_Snow_Profiles_List_Content(void)
+{
+
+	uint_16 display_list, temp_i, i = 0, j=0, cnt=0;
+	char Test_Name[16];
+
+	Snow_Profiles_List_count = Sd_card_folder_count-1;
+	display_list = (Snow_Profiles_List_selection / NUM_OF_LIST_ITEM_IN_A_VIEW);
+	temp_i = (display_list * NUM_OF_LIST_ITEM_IN_A_VIEW) + i;
+
+	for (i = 0; i < NUM_OF_LIST_ITEM_IN_A_VIEW; i++)
+	{
+		display_list = (Snow_Profiles_List_selection / NUM_OF_LIST_ITEM_IN_A_VIEW);
+		temp_i = (display_list * NUM_OF_LIST_ITEM_IN_A_VIEW) + i;
+		if (temp_i >= Snow_Profiles_List_count)
+		{
+			break;
+		}
+
+		cnt= (i+(Folder_name_count*NUM_OF_LIST_ITEM_IN_A_VIEW));
+
+			sprintf(Test_Name, "%c%c/%c%c/%c%c", Snow_Profile_Directory[cnt][4],Snow_Profile_Directory[cnt][5],
+					Snow_Profile_Directory[cnt][6],Snow_Profile_Directory[cnt][7],
+					Snow_Profile_Directory[cnt][2],Snow_Profile_Directory[cnt][3]);
+
+
+		if (i == (Snow_Profiles_List_selection % NUM_OF_LIST_ITEM_IN_A_VIEW))
+		{
+			// Add_Item_To_Menu(Snow_Profiles_List_Text[temp_i],i,MENU_SELECTED);	
+			Folder_name_index= (i+(Folder_name_count*NUM_OF_LIST_ITEM_IN_A_VIEW));
+			Add_Item_To_Menu(Test_Name, i, MENU_SELECTED);
+		}
+		else
+		{
+			//	 Add_Item_To_Menu(Snow_Profiles_List_Text[temp_i],i,MENU_NOT_SELECTED);	
+			Add_Item_To_Menu(Test_Name, i, MENU_NOT_SELECTED);
+		}
+
+	}
+
+}
+
+
+/*-----------------------------------------------------------------------------* 
+ * Function:    Create_Snow_Profiles_File_List_Content
+ * Brief:       This will add snow profile file list screen content in frame buffer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+void Create_Snow_Profiles_File_List_Content(void)
+{
+
+	uint_16 display_list, temp_i, i = 0, cnt=0, fav_cnt=0;
+	char Test_Name[16];
+
+	Snow_Profiles_File_List_count = Sd_card_file_count;
+	display_list = (Snow_Profiles_File_List_selection / NUM_OF_LIST_ITEM_IN_A_VIEW);
+	temp_i = (display_list * NUM_OF_LIST_ITEM_IN_A_VIEW) + i;
+
+	for (i = 0; i < NUM_OF_LIST_ITEM_IN_A_VIEW; i++)
+	{
+		display_list = (Snow_Profiles_File_List_selection / NUM_OF_LIST_ITEM_IN_A_VIEW);
+		temp_i = (display_list * NUM_OF_LIST_ITEM_IN_A_VIEW) + i;
+		if (temp_i >= Snow_Profiles_File_List_count)
+		{
+			break;
+		}
+		cnt= (i+(File_name_count*NUM_OF_LIST_ITEM_IN_A_VIEW));
+		sprintf(Test_Name, "%d  %c%c:%c%c%c", Sd_card_file_count - cnt, Snow_Profile_List_Data[cnt][1],
+				Snow_Profile_List_Data[cnt][2],Snow_Profile_List_Data[cnt][3],
+				Snow_Profile_List_Data[cnt][4],Snow_Profile_List_Data[cnt][5]);
+
+		for(fav_cnt = 0; fav_cnt < Favourites_file_count; fav_cnt++)
+		{
+			if(strcmp(Snow_Profile_File_Name[cnt]+1, FavouriteEntry[fav_cnt].Favourite_File_Name+1)==0)
+			{
+				strcat(Test_Name, "*");
+			}
+		}
+
+		if (i == (Snow_Profiles_File_List_selection % NUM_OF_LIST_ITEM_IN_A_VIEW))
+		{
+			// Add_Item_To_Menu(Snow_Profiles_List_Text[temp_i],i,MENU_SELECTED);	
+			File_name_index=i+(File_name_count*NUM_OF_LIST_ITEM_IN_A_VIEW);
+			Add_Item_To_Menu(Test_Name, i, MENU_SELECTED);
+		}
+		else
+		{
+			//	 Add_Item_To_Menu(Snow_Profiles_List_Text[temp_i],i,MENU_NOT_SELECTED);	
+			Add_Item_To_Menu(Test_Name, i, MENU_NOT_SELECTED);
+		}
+
+	}
+
+
+}
+
+/*-----------------------------------------------------------------------------* 
+ * Function:    Create_Snow_Profile_Details_Content
+ * Brief:       This will create Create Snow Profile Details content in frame buffer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+static void Create_Snow_Profile_Details_Content(void)
+{
+	_mqx_int error_code;
+	char name[20]="a:\\";
+	char Processed_Data_file_name[36];
+	char Time_Stamp[32], dummy_file_name[16], dummy_folder_name[16], list_num[5];
+	uint_16 j=0;
+
+
+	if(State_of_Screen==UI_FAVOURITES_LIST)
+	{
+		Folder_name_index = FavouriteEntry[Favourites_List_selection].Favourite_Folder_Index;		
+		Sd_Card_File_List(Folder_name_index);
+		File_name_index = 	Sd_card_file_count - FavouriteEntry[Favourites_List_selection].Favourite_File_Index;
+		Favourites_List_selection=0;
+		State_of_Screen=UI_SNOW_PROFILE_DETAILS;
+
+		strcat(name, Snow_Profile_Directory[Folder_name_index]);
+		error_code = ioctl(filesystem_handle, IO_IOCTL_CHANGE_CURRENT_DIR, (uint_32_ptr) name);
+		if(error_code==MQX_OK)
+		{
+			printf("\nCHANGED DIRECTORY TO %s in function display_Snow_Profile_Details" , name);
+		}
+		else
+		{
+			printf("\nCHANGE DIRECTORY FAILED in function display_Snow_Profile_Details");
+			return;
+		}
+		Snow_Profiles_File_List_selection = File_name_index;
+	}
+	printf("\nFolder_name_index: %d",  Folder_name_index);
+	printf("\nFile_name_index:   %d",  File_name_index); 
+	printf("\nSnow_Profiles_File_List_selection:   %d",  Snow_Profiles_File_List_selection); 
+
+	if(State_of_Screen==UI_SNOW_PROFILE_DETAILS)
+	{
+		if(strcmp(temp_test_file_name, Snow_Profile_File_Name[File_name_index]) != 0)
+		{
+			sprintf(Processed_Data_file_name, "a:\\%s\\%7s", Snow_Profile_Directory[Folder_name_index],Snow_Profile_File_Name[File_name_index]);
+			//    Read_pressure_pixelated_means_values
+			if (Read_pressure_pixelated_means_values(Processed_Data_file_name) != 0)
+			{
+				display_record_not_found();
+				return;
+			}
+			sprintf(temp_test_file_name,  Snow_Profile_File_Name[File_name_index]);
+		}
+	}
+
+	sprintf(dummy_file_name, " %c%c:%c%c%c", Snow_Profile_List_Data[File_name_index][1],
+			Snow_Profile_List_Data[File_name_index][2],Snow_Profile_List_Data[File_name_index][3],
+			Snow_Profile_List_Data[File_name_index][4],Snow_Profile_List_Data[File_name_index][5]);
+
+
+	sprintf(dummy_folder_name, "%c%c/%c%c/%c%c", Snow_Profile_Directory[Folder_name_index][4],Snow_Profile_Directory[Folder_name_index][5],
+			Snow_Profile_Directory[Folder_name_index][6],Snow_Profile_Directory[Folder_name_index][7],
+			Snow_Profile_Directory[Folder_name_index][2],Snow_Profile_Directory[Folder_name_index][3]);
+	sprintf(Time_Stamp, dummy_folder_name);
+
+	sprintf(Time_Stamp, "%s%s", dummy_folder_name, dummy_file_name);
+	//Code to add the star icon to the favourite menu.
+	if(Favourites_file_count>0)
+	{
+		for(j=0; j<Favourites_file_count; j++)
+		{
+			if(strcmp(FavouriteEntry[j].Favourite_File_Name+1,Snow_Profile_File_Name[File_name_index]+1)==0)
+			{
+				strcat(Time_Stamp, "*");
+				j=0;
+				break;
+			}
+		}
+	}       
+	Create_Title(Time_Stamp,strlen(Time_Stamp));
+	sprintf(list_num, "%d", Sd_card_file_count-File_name_index);
+	Draw_string_new(120, 2, list_num, COLOUR_BLACK, MEDIUM_FONT);
+
+	create_Snow_Profile_Chart();
+	if((State_of_Screen==UI_SNOW_PROFILE_DETAILS)||(State_of_Screen==UI_SET_FAVOURITE)||(State_of_Screen==UI_SNOW_PROFILE_DELETE))
+	{
+		Create_Footer("BACK",strlen("BACK"), "OPTIONS",strlen("OPTIONS"));
+		Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	}
+}
+/*-----------------------------------------------------------------------------* 
+ * Function:    Create_New_Snow_Profile_Content
+ * Brief:       This will Create new Snow Profile content in frame buffer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+static void Create_New_Snow_Profile_Content(void)
+{
+	uint_16 x_position, y_position;
+
+	x_position = (DISPLAY_X_MAX / 2) - (((strlen("ALIGN PROBE")) / 2) * NUM_X_PIXEL_PER_CHAR);
+	y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
+	Draw_string(x_position, y_position, (uint_8 *) "ALIGN PROBE", COLOUR_BLACK);
+
+	x_position = (DISPLAY_X_MAX / 2) - (((strlen("PRESS")) / 2) * NUM_X_PIXEL_PER_CHAR);
+	y_position = y_position + (3 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string(x_position, y_position, (uint_8 *) "PRESS", COLOUR_BLACK);
+
+	x_position = (DISPLAY_X_MAX / 2) - (((strlen("TO BEGIN")) / 2) * NUM_X_PIXEL_PER_CHAR);
+	y_position = y_position + (8 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string(x_position, y_position, (uint_8 *) "TO BEGIN", COLOUR_BLACK);
+
+}
 
 
 /*-----------------------------------------------------------------------------* 
@@ -2605,8 +2175,52 @@ static void Create_Slope_Measurement_Content(void)
 	sprintf(list_num, "%d", Sd_card_file_count-File_name_index);
 	Draw_string_new(120, 2, list_num, COLOUR_BLACK, MEDIUM_FONT);
 }
+/*-----------------------------------------------------------------------------* 
+ * Function:    Create_Snow_Profile_Discard_Content
+ * Brief:       This will Create Snow Profile Discard screen Content in frame buffer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+static void Create_Snow_Profile_Discard_Content(void)
+{
+	uint_16 x_position, y_position;
 
+	x_position = (DISPLAY_X_MAX / 2) - (((strlen("ARE YOU SURE YOU")) / 2) * NUM_X_PIXEL_PER_CHAR);
+	y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/4);
+	Draw_string(x_position, y_position, (uint_8 *) "ARE YOU SURE YOU", COLOUR_BLACK);
 
+	x_position = (DISPLAY_X_MAX / 2) - (((strlen("WANT TO DISCARD")) / 2) * NUM_X_PIXEL_PER_CHAR);
+	y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string(x_position, y_position, (uint_8 *) "WANT TO DISCARD", COLOUR_BLACK);
+
+	x_position = (DISPLAY_X_MAX / 2) - (((strlen("THIS TEST?")) / 2) * NUM_X_PIXEL_PER_CHAR);
+	y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string(x_position, y_position, (uint_8 *) "THIS TEST?", COLOUR_BLACK);
+
+}
+/*-----------------------------------------------------------------------------* 
+ * Function:    Create_Snow_Profile_Delete_Content
+ * Brief:       This will Create Snow Profile delete screen Content in frame buffer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+static void Create_Snow_Profile_Delete_Content(void)
+{
+	uint_16 x_position, y_position;
+
+	x_position = (DISPLAY_X_MAX / 2) - (((strlen("ARE YOU SURE YOU")) / 2) * NUM_X_PIXEL_PER_CHAR);
+	y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/4);
+	Draw_string(x_position, y_position, (uint_8 *) "ARE YOU SURE YOU", COLOUR_BLACK);
+
+	x_position = (DISPLAY_X_MAX / 2) - (((strlen("WANT TO DELETE")) / 2) * NUM_X_PIXEL_PER_CHAR);
+	y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string(x_position, y_position, (uint_8 *) "WANT TO DELETE", COLOUR_BLACK);
+
+	x_position = (DISPLAY_X_MAX / 2) - (((strlen("THIS TEST?")) / 2) * NUM_X_PIXEL_PER_CHAR);
+	y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string(x_position, y_position, (uint_8 *) "THIS TEST?", COLOUR_BLACK);
+
+}
 /*-----------------------------------------------------------------------------* 
  * Function:    Create_Sensor_Output_Content
  * Brief:       This will Create Sensor output screen Content in frame buffer
@@ -2683,7 +2297,7 @@ static void Create_Sensor_Output_Content(void)
 		magnetic_heading = 360 - magnetic_heading;
 		sprintf(tempString, "%d° %s ", magnetic_heading, aspect);
 	}
-
+	
 	x_position = (DISPLAY_X_MAX -20) - (strlen(tempString)* NUM_X_PIXEL_PER_CHAR);
 	Draw_string_new(x_position, y_position, (uint_8 *) tempString, COLOUR_BLACK, MEDIUM_FONT);
 
@@ -2707,6 +2321,88 @@ static void Create_Sensor_Output_Content(void)
 }
 
 /*-----------------------------------------------------------------------------* 
+ * Function:    Create_Sensor_Output_Content
+ * Brief:       This will Create Sensor output screen Content in frame buffer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+static void Create_ADC_Output_Content(void)
+{
+	uint_16 x_position, y_position;
+	char tempString[16];
+
+	uint_16 raw_pressure = 0, raw_depth = 0,raw_ros1 = 0, raw_ros2 = 0,raw_Batt_volt = 0,
+			raw_Batt_curr = 0,raw_Batt_temp = 0;
+
+	Get_ADC_Outputs(&raw_pressure,&raw_depth,&raw_ros1,&raw_ros2,
+					&raw_Batt_volt,&raw_Batt_curr,&raw_Batt_temp);
+
+	x_position =12;
+	y_position = DISPLAY_CONTAINER_Y_MIN -(20)+ ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/8);
+	Draw_string_new(x_position, y_position, (uint_8 *) "PRESSURE:", COLOUR_BLACK, MEDIUM_FONT);
+
+
+	sprintf(tempString, "%d ", raw_pressure);
+	x_position = (DISPLAY_X_MAX -12) - (strlen(tempString)* NUM_X_PIXEL_PER_CHAR);
+
+
+	Draw_string_new(x_position, (y_position), (uint_8 *) tempString, COLOUR_BLACK, MEDIUM_FONT);
+
+	x_position =12;
+	y_position = y_position + 10 +(2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) "DEPTH:", COLOUR_BLACK, MEDIUM_FONT);
+
+
+	sprintf(tempString, "%d ", raw_depth);
+	x_position = (DISPLAY_X_MAX -12) - (strlen(tempString)* NUM_X_PIXEL_PER_CHAR);
+
+
+	Draw_string_new(x_position, (y_position), (uint_8 *) tempString, COLOUR_BLACK, MEDIUM_FONT);
+
+	x_position =12;
+	y_position = y_position + 10 + (2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) "ROS 1:", COLOUR_BLACK, MEDIUM_FONT);
+
+
+	sprintf(tempString, "%d ", raw_ros1 );
+	x_position = (DISPLAY_X_MAX -12) - (strlen(tempString)* NUM_X_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) tempString, COLOUR_BLACK, MEDIUM_FONT);
+
+	
+	x_position =12;
+	y_position = y_position + 10 + (2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) "ROS 2:", COLOUR_BLACK, MEDIUM_FONT);
+
+	sprintf(tempString, "%d ", raw_ros2 );
+	x_position = (DISPLAY_X_MAX -12) - (strlen(tempString)* NUM_X_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) tempString, COLOUR_BLACK, MEDIUM_FONT);
+
+	x_position =12;
+	y_position = y_position + 10 + (2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) "BAT VOLT:", COLOUR_BLACK, MEDIUM_FONT);
+
+	sprintf(tempString, "%d ", raw_Batt_volt );
+	x_position = (DISPLAY_X_MAX -20) - (strlen(tempString)* NUM_X_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) tempString, COLOUR_BLACK, MEDIUM_FONT);
+
+	x_position =12;
+	y_position = y_position + 10 + (2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) "BAT CURR:", COLOUR_BLACK, MEDIUM_FONT);
+
+	sprintf(tempString, "%d ", raw_Batt_curr );
+	x_position = (DISPLAY_X_MAX -20) - (strlen(tempString)* NUM_X_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) tempString, COLOUR_BLACK, MEDIUM_FONT);
+
+	x_position =12;
+	y_position = y_position + 10 + (2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) "BAT TEMP:", COLOUR_BLACK, MEDIUM_FONT);
+	
+	sprintf(tempString, "%d ", raw_Batt_temp );
+	x_position = (DISPLAY_X_MAX -20) - (strlen(tempString)* NUM_X_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) tempString, COLOUR_BLACK, MEDIUM_FONT);
+
+}
+/*-----------------------------------------------------------------------------* 
  * Function:    Create_Bluetooth_main_Content
  * Brief:       This will Create bluetooth main screen Content in frame buffer
  * Parameter:   None
@@ -2714,193 +2410,535 @@ static void Create_Sensor_Output_Content(void)
  -----------------------------------------------------------------------------*/
 static void Create_Bluetooth_main_Content(void)
 {
-	uint_16 x_position, y_position;    
+    uint_16 x_position, y_position;    
 
-	if(ble_transmission_status == BLUETOOTH_INITIALIZING)
+    if(ble_transmission_status == BLUETOOTH_INITIALIZING)
+    {
+    	y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
+    	
+        x_position = (DISPLAY_X_MAX / 2) - (((strlen("INITIALIZING")) / 2) * NUM_X_PIXEL_PER_CHAR);
+        y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+        Draw_string(x_position, y_position, (uint_8 *) "INITIALIZING", COLOUR_BLACK);
+        
+        x_position = (DISPLAY_X_MAX / 2) - (((strlen("BLUETOOTH ")) / 2) * NUM_X_PIXEL_PER_CHAR);
+        y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+        Draw_string(x_position, y_position, (uint_8 *) "BLUETOOTH ", COLOUR_BLACK);
+        
+//        x_position = (DISPLAY_X_MAX / 2) - (((strlen("PLEASE WAIT")) / 2) * NUM_X_PIXEL_PER_CHAR);
+//        y_position = y_position + (4 * NUM_Y_PIXEL_PER_CHAR);
+//        Draw_string(x_position, y_position, (uint_8 *) "PLEASE WAIT", COLOUR_BLACK);
+   
+        Create_Footer("",0, "",0);
+    }
+    else if(ble_transmission_status == BLUETOOTH_DEVICE_NOT_CONNECTED)
+    {
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("THE DEVICE IS NOW")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
+     Draw_string(x_position, y_position, (uint_8 *) "THE DEVICE IS NOW", COLOUR_BLACK);
+     
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("DISCOVERABLE.")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+     Draw_string(x_position, y_position, (uint_8 *) "DISCOVERABLE.", COLOUR_BLACK);
+     
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("PLEASE CONNECT")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = y_position + (4 * NUM_Y_PIXEL_PER_CHAR);
+     Draw_string(x_position, y_position, (uint_8 *) "PLEASE CONNECT", COLOUR_BLACK);
+     
+     x_position = (DISPLAY_X_MAX / 2)
+       - (((strlen("YOUR DEVICE")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+     Draw_string(x_position, y_position, (uint_8 *) "YOUR DEVICE", COLOUR_BLACK);
+     
+     Create_Footer("BACK",strlen("BACK"), "",0);
+    }
+    else if(ble_transmission_status == BLUETOOTH_DEVICE_CONNECTED)
+    {
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("DEVICE IS NOW")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
+     Draw_string(x_position, y_position, (uint_8 *) "DEVICE IS NOW", COLOUR_BLACK);
+     
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("CONNECTED.")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+     Draw_string(x_position, y_position, (uint_8 *) "CONNECTED.", COLOUR_BLACK);
+     
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("SEND QUERY LIST")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = y_position + (4 * NUM_Y_PIXEL_PER_CHAR);
+     Draw_string(x_position, y_position, (uint_8 *) "SEND QUERY LIST", COLOUR_BLACK);
+     
+     x_position = (DISPLAY_X_MAX / 2)
+       - (((strlen("FROM APP")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+     Draw_string(x_position, y_position, (uint_8 *) "FROM APP", COLOUR_BLACK);
+     
+     Create_Footer("BACK",strlen("BACK"),"",0);
+    }
+//    else if(ble_transmission_status == BLUETOOTH_QUERY_LIST_COMPLETED)
+//    {
+////     x_position = (DISPLAY_X_MAX / 2) - (((strlen("SENDING QUERY")) / 2) * NUM_X_PIXEL_PER_CHAR);
+//     y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
+////     Draw_string(x_position, y_position, (uint_8 *) "SENDING QUERY", COLOUR_BLACK);
+//     
+//     //MANIFEST NAME
+//     x_position = (DISPLAY_X_MAX / 2) - (((strlen("SENDING QUERY LIST")) / 2) * NUM_X_PIXEL_PER_CHAR);
+//     y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+//     Draw_string(x_position, y_position, (uint_8 *) "SENDING QUERY LIST", COLOUR_BLACK);
+//     
+//     x_position = (DISPLAY_X_MAX / 2) - (((strlen((const char *)(Query_list_name + 3))) / 2) * NUM_X_PIXEL_PER_CHAR);
+//     y_position = y_position + (3 * NUM_Y_PIXEL_PER_CHAR);
+//     Draw_string(x_position, y_position, (uint_8 *) (Query_list_name + 3), COLOUR_BLACK);
+//   
+//     
+//     Create_Footer("BACK",strlen("BACK"), "",0);
+//    }
+    else if(ble_transmission_status == BLUETOOTH_WAIT_FOR_SYNC)
+    {
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("WAITING FOR TEST")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
+     Draw_string(x_position, y_position, (uint_8 *) "WAITING FOR TEST", COLOUR_BLACK);
+     
+     //MANIFEST NAME
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("FILE REQ LIST")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+     Draw_string(x_position, y_position, (uint_8 *) "FILE REQ LIST", COLOUR_BLACK);
+     
+//     x_position = (DISPLAY_X_MAX / 2) - (((strlen("SENDING FILE")) / 2) * NUM_X_PIXEL_PER_CHAR);
+//     y_position = y_position + (4 * NUM_Y_PIXEL_PER_CHAR);
+//     Draw_string(x_position, y_position, (uint_8 *) "SENDING FILE", COLOUR_BLACK);
+//   
+     
+     Create_Footer("BACK",strlen("BACK"), "",0);
+    }
+    else if(ble_transmission_status == BLUETOOTH_SYNC_FILES)
+    {
+
+     y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
+     //MANIFEST NAME
+//     y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);    
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("SYNCING")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = y_position + (3 * NUM_Y_PIXEL_PER_CHAR);
+     Draw_string(x_position, y_position, (uint_8 *) "SYNCING", COLOUR_BLACK);
+   
+     
+     Create_Footer("CANCEL",strlen("CANCEL"), "",0);
+    }
+    else if(ble_transmission_status == BLUETOOTH_TRANSFER_COMPLETED)
+    {
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("DATA TRANSFER")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
+     Draw_string(x_position, y_position, (uint_8 *) "DATA TRANSFER", COLOUR_BLACK);
+     
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("COMPLETE!")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+     Draw_string(x_position, y_position, (uint_8 *) "COMPLETE!", COLOUR_BLACK);
+     
+     Create_Footer("",0, "ACCEPT",strlen("ACCEPT"));
+    }
+    else if(ble_transmission_status == BLUETOOTH_TRANSFER_FAILED)
+    {
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("DATA TRANSFER")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
+     Draw_string(x_position, y_position, (uint_8 *) "DATA TRANSFER", COLOUR_BLACK);
+     
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("FAILED!")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+     Draw_string(x_position, y_position, (uint_8 *) "FAILED!", COLOUR_BLACK);
+     
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("PLEASE TRY")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = y_position + (4 * NUM_Y_PIXEL_PER_CHAR);
+     Draw_string(x_position, y_position, (uint_8 *) "PLEASE TRY", COLOUR_BLACK);
+     
+     x_position = (DISPLAY_X_MAX / 2)
+       - (((strlen("AGAIN.")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+     Draw_string(x_position, y_position, (uint_8 *) "AGAIN.", COLOUR_BLACK);
+   
+     
+     Create_Footer("CANCEL",strlen("CANCEL"), "RETRY",strlen("RETRY"));
+    }
+    else if(ble_transmission_status == BLUETOOTH_TURNED_OFF)
+    {
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("PLEASE TURN")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
+     Draw_string(x_position, y_position, (uint_8 *) "PLEASE TURN", COLOUR_BLACK);
+     
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("ON BLUETOOTH")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+     Draw_string(x_position, y_position, (uint_8 *) "ON BLUETOOTH", COLOUR_BLACK);
+     
+     x_position = (DISPLAY_X_MAX / 2) - (((strlen("TO SEND")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = y_position + (4 * NUM_Y_PIXEL_PER_CHAR);
+     Draw_string(x_position, y_position, (uint_8 *) "TO SEND", COLOUR_BLACK);
+     
+     x_position = (DISPLAY_X_MAX / 2)
+       - (((strlen("THE FILE")) / 2) * NUM_X_PIXEL_PER_CHAR);
+     y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+     Draw_string(x_position, y_position, (uint_8 *) "THE FILE", COLOUR_BLACK); 
+     
+     Create_Footer("BACK",strlen("BACK"), "",0);
+    }  
+    else if(ble_transmission_status == BLUETOOTH_QRY_LIST_NOT_CREATED)
+       {
+    	x_position = (DISPLAY_X_MAX / 2) - (((strlen("QUERY LIST IS")) / 2) * NUM_X_PIXEL_PER_CHAR);
+    	y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
+    	Draw_string(x_position, y_position, (uint_8 *) "QUERY LIST IS", COLOUR_BLACK);
+
+    	x_position = (DISPLAY_X_MAX / 2) - (((strlen("EMPTY.")) / 2) * NUM_X_PIXEL_PER_CHAR);
+    	y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+    	Draw_string(x_position, y_position, (uint_8 *) "EMPTY.", COLOUR_BLACK);
+
+    	x_position = (DISPLAY_X_MAX / 2) - (((strlen("PLEASE RUN")) / 2) * NUM_X_PIXEL_PER_CHAR);
+    	y_position = y_position + (4 * NUM_Y_PIXEL_PER_CHAR);
+    	Draw_string(x_position, y_position, (uint_8 *) "PLEASE RUN", COLOUR_BLACK);
+
+    	x_position = (DISPLAY_X_MAX / 2)
+    	    		   - (((strlen("SOME TEST")) / 2) * NUM_X_PIXEL_PER_CHAR);
+    	y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
+    	Draw_string(x_position, y_position, (uint_8 *) "SOME TEST", COLOUR_BLACK);
+
+    	Create_Footer(" ",strlen(" "),"",0);
+       }  
+    
+}
+/*-----------------------------------------------------------------------------* 
+ * Function:    Create_New_Snow_Profile_processing_Content
+ * Brief:       This will Create new snow profile processing screen Content in frame buffer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+static void Create_New_Snow_Profile_processing_Content(void)
+{
+	uint_16 x_position, y_position;
+	//    static uint_8 tempCount;
+
+	x_position = (DISPLAY_X_MAX / 2)-20 - (((strlen("PROCESSING DATA")) / 2) * NUM_X_PIXEL_PER_CHAR);
+
+	if(x_position>DISPLAY_X_MAX)
 	{
-		y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
-
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("INITIALIZING")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "INITIALIZING", COLOUR_BLACK);
-
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("BLUETOOTH ")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "BLUETOOTH ", COLOUR_BLACK);
-
-		//        x_position = (DISPLAY_X_MAX / 2) - (((strlen("PLEASE WAIT")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		//        y_position = y_position + (4 * NUM_Y_PIXEL_PER_CHAR);
-		//        Draw_string(x_position, y_position, (uint_8 *) "PLEASE WAIT", COLOUR_BLACK);
-
-		Create_Footer("",0, "",0);
+		printf("\nCreate_New_Snow_Profile_processing_Content Overflow Error\n");
+		x_position =1;
 	}
-	else if(ble_transmission_status == BLUETOOTH_DEVICE_NOT_CONNECTED)
+
+	y_position = 150;
+	Draw_string_new(x_position, y_position, (uint_8 *) "PROCESSING DATA", COLOUR_BLACK, MEDIUM_FONT);
+
+	switch (tempCount)
 	{
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("THE DEVICE IS NOW")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
-		Draw_string(x_position, y_position, (uint_8 *) "THE DEVICE IS NOW", COLOUR_BLACK);
 
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("DISCOVERABLE.")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "DISCOVERABLE.", COLOUR_BLACK);
+	case 4:
+		//            y_position = 270;
+		//            Rect_Fill(x_position, y_position, x_position + 20, y_position + 20, COLOUR_BLACK);
+		Draw_loading_image(48, 180, LOADING_IMAGE_ALL_BLACK, COLOUR_BLACK);
+		break;
 
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("PLEASE CONNECT")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (4 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "PLEASE CONNECT", COLOUR_BLACK);
+	case 3:
+		//            y_position = 270;
+		//            Rect_Fill(x_position, y_position, x_position + 20, y_position + 20, COLOUR_BLACK);
+		Draw_loading_image(48, 180, LOADING_IMAGE_THREE_BLACK, COLOUR_BLACK);
+		break;
 
-		x_position = (DISPLAY_X_MAX / 2)
-    		   - (((strlen("YOUR DEVICE")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "YOUR DEVICE", COLOUR_BLACK);
+	case 2:
+		//            y_position = 270 - 40;
+		//            Rect_Fill(x_position, y_position, x_position + 20, y_position + 20, COLOUR_BLACK);
+		Draw_loading_image(48, 180, LOADING_IMAGE_TWO_BLACK, COLOUR_BLACK);
+		break;
+	case 1:
+		//            y_position = 270 - 80;
+		//            Rect_Fill(x_position, y_position, x_position + 20, y_position + 20, COLOUR_BLACK);
+		Draw_loading_image(48, 180, LOADING_IMAGE_ONE_BLACK, COLOUR_BLACK);
+		break;
+	case 0:
+		Draw_loading_image(48, 180, LOADING_IMAGE_NO_BLACK, COLOUR_BLACK);
+		break;
+	default:
+		tempCount = 0;
+		break;
 
-		Create_Footer("BACK",strlen("BACK"), "",0);
 	}
-	else if(ble_transmission_status == BLUETOOTH_DEVICE_CONNECTED)
+	tempCount++;
+	tempCount = tempCount % 5;
+
+
+}
+/*-----------------------------------------------------------------------------* 
+ * Function:    Create_Settings_Main_Content
+ * Brief:       This will Create settings main screen Content in frame buffer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+static void Create_Settings_Main_Content(void)
+{
+	uint_16 x_position, y_position;
+	char tempString[6];
+	float temp = 1.6;
+	x_position = 10;
+	y_position = 55;
+
+	Draw_string(x_position, y_position, (uint_8 *) "SAMPLING RATE:", COLOUR_BLACK);
+	sprintf(tempString, "%f", Settings_Data.Sampling_Rate);
+	if (Config_settings_selection == SELECTION_SAMPLING_RATE)
 	{
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("DEVICE IS NOW")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
-		Draw_string(x_position, y_position, (uint_8 *) "DEVICE IS NOW", COLOUR_BLACK);
-
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("CONNECTED.")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "CONNECTED.", COLOUR_BLACK);
-
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("SEND QUERY LIST")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (4 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "SEND QUERY LIST", COLOUR_BLACK);
-
-		x_position = (DISPLAY_X_MAX / 2)
-    		   - (((strlen("FROM APP")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "FROM APP", COLOUR_BLACK);
-
-		Create_Footer("BACK",strlen("BACK"),"",0);
+		Rect_Fill(x_position + ((strlen("SAMPLING RATE:") + 2) * NUM_X_PIXEL_PER_CHAR),
+				y_position - 5,
+				x_position
+				+ ((strlen("SAMPLING RATE:") + 4 + (strlen(tempString)))
+						* NUM_X_PIXEL_PER_CHAR), y_position + 20, COLOUR_BLACK);
+		Draw_string(x_position + ((strlen("SAMPLING RATE:") + 3) * NUM_X_PIXEL_PER_CHAR),
+				y_position, tempString, COLOUR_WHITE);
 	}
-	//    else if(ble_transmission_status == BLUETOOTH_QUERY_LIST_COMPLETED)
-	//    {
-	////     x_position = (DISPLAY_X_MAX / 2) - (((strlen("SENDING QUERY")) / 2) * NUM_X_PIXEL_PER_CHAR);
-	//     y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
-	////     Draw_string(x_position, y_position, (uint_8 *) "SENDING QUERY", COLOUR_BLACK);
-	//     
-	//     //MANIFEST NAME
-	//     x_position = (DISPLAY_X_MAX / 2) - (((strlen("SENDING QUERY LIST")) / 2) * NUM_X_PIXEL_PER_CHAR);
-	//     y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
-	//     Draw_string(x_position, y_position, (uint_8 *) "SENDING QUERY LIST", COLOUR_BLACK);
-	//     
-	//     x_position = (DISPLAY_X_MAX / 2) - (((strlen((const char *)(Query_list_name + 3))) / 2) * NUM_X_PIXEL_PER_CHAR);
-	//     y_position = y_position + (3 * NUM_Y_PIXEL_PER_CHAR);
-	//     Draw_string(x_position, y_position, (uint_8 *) (Query_list_name + 3), COLOUR_BLACK);
-	//   
-	//     
-	//     Create_Footer("BACK",strlen("BACK"), "",0);
-	//    }
-	else if(ble_transmission_status == BLUETOOTH_WAIT_FOR_SYNC)
+	else
 	{
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("WAITING FOR TEST")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
-		Draw_string(x_position, y_position, (uint_8 *) "WAITING FOR TEST", COLOUR_BLACK);
+		Draw_string(x_position + ((strlen("SAMPLING RATE:") + 3) * NUM_X_PIXEL_PER_CHAR),
+				y_position, tempString, COLOUR_BLACK);
 
-		//MANIFEST NAME
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("FILE REQ LIST")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "FILE REQ LIST", COLOUR_BLACK);
-
-		//     x_position = (DISPLAY_X_MAX / 2) - (((strlen("SENDING FILE")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		//     y_position = y_position + (4 * NUM_Y_PIXEL_PER_CHAR);
-		//     Draw_string(x_position, y_position, (uint_8 *) "SENDING FILE", COLOUR_BLACK);
-		//   
-
-		Create_Footer("BACK",strlen("BACK"), "",0);
 	}
-	else if(ble_transmission_status == BLUETOOTH_SYNC_FILES)
+
+	y_position = y_position + 30;
+	Draw_string(x_position, y_position, (uint_8 *) "QRD BREAK V:", COLOUR_BLACK);
+	sprintf(tempString, "%.2f", Settings_Data.QRDbreakV);
+
+	if (Config_settings_selection == SELECTION_OPTICAL_TRIGGER_THRESHOLD)
 	{
-
-		y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
-		//MANIFEST NAME
-		//     y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);    
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("SYNCING")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (3 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "SYNCING", COLOUR_BLACK);
-
-
-		Create_Footer("CANCEL",strlen("CANCEL"), "",0);
+		Rect_Fill(x_position + ((strlen("QRD BREAK V:") + 2) * NUM_X_PIXEL_PER_CHAR),
+				y_position - 5,
+				x_position
+				+ ((strlen("QRD BREAK V:") + 4 + (strlen(tempString)))
+						* NUM_X_PIXEL_PER_CHAR), y_position + 20, COLOUR_BLACK);
+		Draw_string(x_position + ((strlen("QRD BREAK V:") + 3) * NUM_X_PIXEL_PER_CHAR), y_position,
+				tempString, COLOUR_WHITE);
 	}
-	else if(ble_transmission_status == BLUETOOTH_TRANSFER_COMPLETED)
+	else
 	{
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("DATA TRANSFER")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
-		Draw_string(x_position, y_position, (uint_8 *) "DATA TRANSFER", COLOUR_BLACK);
+		Draw_string(x_position + ((strlen("QRD BREAK V:") + 3) * NUM_X_PIXEL_PER_CHAR), y_position,
+				tempString, COLOUR_BLACK);
 
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("COMPLETE!")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "COMPLETE!", COLOUR_BLACK);
-
-		Create_Footer("",0, "ACCEPT",strlen("ACCEPT"));
 	}
-	else if(ble_transmission_status == BLUETOOTH_TRANSFER_FAILED)
+	y_position = y_position + 30;
+	Draw_string(x_position, y_position, (uint_8 *) "TEST TIME:", COLOUR_BLACK);
+	sprintf(tempString, "%d", Settings_Data.Test_Time);
+	if (Config_settings_selection == SELECTION_TEST_TIME)
 	{
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("DATA TRANSFER")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
-		Draw_string(x_position, y_position, (uint_8 *) "DATA TRANSFER", COLOUR_BLACK);
-
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("FAILED!")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "FAILED!", COLOUR_BLACK);
-
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("PLEASE TRY")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (4 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "PLEASE TRY", COLOUR_BLACK);
-
-		x_position = (DISPLAY_X_MAX / 2)
-    		   - (((strlen("AGAIN.")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "AGAIN.", COLOUR_BLACK);
-
-
-		Create_Footer("CANCEL",strlen("CANCEL"), "RETRY",strlen("RETRY"));
+		Rect_Fill(x_position + ((strlen("TEST TIME:") + 2) * NUM_X_PIXEL_PER_CHAR), y_position - 5,
+				x_position
+				+ ((strlen("TEST TIME:") + 4 + (strlen(tempString))) * NUM_X_PIXEL_PER_CHAR),
+				y_position + 20, COLOUR_BLACK);
+		Draw_string(x_position + ((strlen("TEST TIME:") + 3) * NUM_X_PIXEL_PER_CHAR), y_position,
+				tempString, COLOUR_WHITE);
 	}
-	else if(ble_transmission_status == BLUETOOTH_TURNED_OFF)
+	else
 	{
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("PLEASE TURN")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
-		Draw_string(x_position, y_position, (uint_8 *) "PLEASE TURN", COLOUR_BLACK);
+		Draw_string(x_position + ((strlen("TEST TIME:") + 3) * NUM_X_PIXEL_PER_CHAR), y_position,
+				tempString, COLOUR_BLACK);
 
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("ON BLUETOOTH")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "ON BLUETOOTH", COLOUR_BLACK);
+	}
 
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("TO SEND")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (4 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "TO SEND", COLOUR_BLACK);
-
-		x_position = (DISPLAY_X_MAX / 2)
-    		   - (((strlen("THE FILE")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "THE FILE", COLOUR_BLACK); 
-
-		Create_Footer("BACK",strlen("BACK"), "",0);
-	}  
-	else if(ble_transmission_status == BLUETOOTH_QRY_LIST_NOT_CREATED)
+	y_position = y_position + 30;
+	Draw_string(x_position, y_position, (uint_8 *) "KFORCE,5:", COLOUR_BLACK);
+	sprintf(tempString, "%.3f", Settings_Data.Kforce5);
+	if (Config_settings_selection == SELECTION_FORCE_SENSOR_CALIBERATION)
 	{
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("QUERY LIST IS")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = DISPLAY_CONTAINER_Y_MIN + ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/6);
-		Draw_string(x_position, y_position, (uint_8 *) "QUERY LIST IS", COLOUR_BLACK);
+		Rect_Fill(x_position + ((strlen("KFORCE,5:") + 2) * NUM_X_PIXEL_PER_CHAR), y_position - 5,
+				x_position
+				+ ((strlen("KFORCE,5:") + 4 + (strlen(tempString))) * NUM_X_PIXEL_PER_CHAR),
+				y_position + 20, COLOUR_BLACK);
+		Draw_string(x_position + ((strlen("KFORCE,5:") + 3) * NUM_X_PIXEL_PER_CHAR), y_position,
+				tempString, COLOUR_WHITE);
+	}
+	else
+	{
+		Draw_string(x_position + ((strlen("KFORCE,5:") + 3) * NUM_X_PIXEL_PER_CHAR), y_position,
+				tempString, COLOUR_BLACK);
 
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("EMPTY.")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "EMPTY.", COLOUR_BLACK);
+	}
 
-		x_position = (DISPLAY_X_MAX / 2) - (((strlen("PLEASE RUN")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (4 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "PLEASE RUN", COLOUR_BLACK);
+	y_position = y_position + 30;
+	Draw_string(x_position, y_position, (uint_8 *) "CALIB TIME:", COLOUR_BLACK);
+	sprintf(tempString, "%.2f", Settings_Data.Calibration_Time);
+	if (Config_settings_selection == SELECTION_CALIBERATION_TIME)
+	{
+		Rect_Fill(x_position + ((strlen("CALIB TIME:") + 2) * NUM_X_PIXEL_PER_CHAR), y_position - 5,
+				x_position
+				+ ((strlen("CALIB TIME:") + 4 + (strlen(tempString))) * NUM_X_PIXEL_PER_CHAR),
+				y_position + 20, COLOUR_BLACK);
+		Draw_string(x_position + ((strlen("CALIB TIME:") + 3) * NUM_X_PIXEL_PER_CHAR), y_position,
+				tempString, COLOUR_WHITE);
+	}
+	else
+	{
+		Draw_string(x_position + ((strlen("CALIB TIME:") + 3) * NUM_X_PIXEL_PER_CHAR), y_position,
+				tempString, COLOUR_BLACK);
 
-		x_position = (DISPLAY_X_MAX / 2)
-    	    				   - (((strlen("SOME TEST")) / 2) * NUM_X_PIXEL_PER_CHAR);
-		y_position = y_position + (2 * NUM_Y_PIXEL_PER_CHAR);
-		Draw_string(x_position, y_position, (uint_8 *) "SOME TEST", COLOUR_BLACK);
+	}
 
-		Create_Footer(" ",strlen(" "),"",0);
-	}  
+	y_position = y_position + 30;
+	Draw_string(x_position, y_position, (uint_8 *) "COMPASS SAMPLES:", COLOUR_BLACK);
+	sprintf(tempString, "%d", Settings_Data.Compass_Samples);
+	if (Config_settings_selection == SELECTION_COMPASS_SAMPLES)
+	{
+		Rect_Fill(x_position + ((strlen("COMPASS SAMPLES:") + 2) * NUM_X_PIXEL_PER_CHAR),
+				y_position - 5,
+				x_position
+				+ ((strlen("COMPASS SAMPLES:") + 4 + (strlen(tempString)))
+						* NUM_X_PIXEL_PER_CHAR), y_position + 20, COLOUR_BLACK);
+		Draw_string(x_position + ((strlen("COMPASS SAMPLES:") + 3) * NUM_X_PIXEL_PER_CHAR),
+				y_position, tempString, COLOUR_WHITE);
+	}
+	else
+	{
+		Draw_string(x_position + ((strlen("COMPASS SAMPLES:") + 3) * NUM_X_PIXEL_PER_CHAR),
+				y_position, tempString, COLOUR_BLACK);
+
+	}
+
+	y_position = y_position + 30;
+	Draw_string(x_position, y_position, (uint_8 *) "QRD PER LOW:", COLOUR_BLACK);
+	sprintf(tempString, "%.2f", Settings_Data.QRDpercentLow);
+	if (Config_settings_selection == SELECTION_QRDPERCENT_LOW)
+	{
+		Rect_Fill(x_position + ((strlen("QRD PER LOW:") + 2) * NUM_X_PIXEL_PER_CHAR),
+				y_position - 5,
+				x_position
+				+ ((strlen("QRD PER LOW:") + 4 + (strlen(tempString)))
+						* NUM_X_PIXEL_PER_CHAR), y_position + 20, COLOUR_BLACK);
+		Draw_string(x_position + ((strlen("QRD PER LOW:") + 3) * NUM_X_PIXEL_PER_CHAR), y_position,
+				tempString, COLOUR_WHITE);
+	}
+	else
+	{
+		Draw_string(x_position + ((strlen("QRD PER LOW:") + 3) * NUM_X_PIXEL_PER_CHAR), y_position,
+				tempString, COLOUR_BLACK);
+
+	}
+
+	y_position = y_position + 30;
+	Draw_string(x_position, y_position, (uint_8 *) "QRD PER HIGH:", COLOUR_BLACK);
+	sprintf(tempString, "%.2f", Settings_Data.QRDpercentHigh);
+	if (Config_settings_selection == SELECTION_QRDPERCENT_HIGH)
+	{
+		Rect_Fill(x_position + ((strlen("QRD PER HIGH:") + 2) * NUM_X_PIXEL_PER_CHAR),
+				y_position - 5,
+				x_position
+				+ ((strlen("QRD PER HIGH:") + 4 + (strlen(tempString)))
+						* NUM_X_PIXEL_PER_CHAR), y_position + 20, COLOUR_BLACK);
+		Draw_string(x_position + ((strlen("QRD PER HIGH:") + 3) * NUM_X_PIXEL_PER_CHAR), y_position,
+				tempString, COLOUR_WHITE);
+	}
+	else
+	{
+		Draw_string(x_position + ((strlen("QRD PER HIGH:") + 3) * NUM_X_PIXEL_PER_CHAR), y_position,
+				tempString, COLOUR_BLACK);
+
+	}
+
+	y_position = y_position + 30;
+	Draw_string(x_position, y_position, (uint_8 *) "BAT THLD:", COLOUR_BLACK);
+	sprintf(tempString, "%.2f", Settings_Data.battery_threshold);
+	if (Config_settings_selection == SELECTION_BATTERY_THRESHOLD)
+	{
+		Rect_Fill(x_position + ((strlen("BAT THLD:") + 2) * NUM_X_PIXEL_PER_CHAR), y_position - 5,
+				x_position
+				+ ((strlen("BAT THLD:") + 4 + (strlen(tempString))) * NUM_X_PIXEL_PER_CHAR),
+				y_position + 20, COLOUR_BLACK);
+		Draw_string(x_position + ((strlen("BAT THLD:") + 3) * NUM_X_PIXEL_PER_CHAR), y_position,
+				tempString, COLOUR_WHITE);
+	}
+	else
+	{
+		Draw_string(x_position + ((strlen("BAT THLD:") + 3) * NUM_X_PIXEL_PER_CHAR), y_position,
+				tempString, COLOUR_BLACK);
+
+	}
+
+	y_position = y_position + 30;
+	Draw_string(x_position, y_position, (uint_8 *) "XFRA:", COLOUR_BLACK);
+	sprintf(tempString, "%.2f", Settings_Data.xfraction);
+	if (Config_settings_selection == SELECTION_XFRACTION_VALUE)
+	{
+		Rect_Fill(x_position + ((strlen("XFRA:") + 2) * NUM_X_PIXEL_PER_CHAR), y_position - 5,
+				x_position + ((strlen("XFRA:") + 4 + (strlen(tempString))) * NUM_X_PIXEL_PER_CHAR),
+				y_position + 20, COLOUR_BLACK);
+		Draw_string(x_position + ((strlen("XFRA:") + 3) * NUM_X_PIXEL_PER_CHAR), y_position,
+				tempString, COLOUR_WHITE);
+	}
+	else
+	{
+		Draw_string(x_position + ((strlen("XFRA:") + 3) * NUM_X_PIXEL_PER_CHAR), y_position,
+				tempString, COLOUR_BLACK);
+
+	}
+
+}
+/*-----------------------------------------------------------------------------* 
+ * Function:    Create_Settings_Password_Content
+ * Brief:       This will Create settings password screen Content in frame buffer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+static void Create_Settings_Password_Content(void)
+{
+	uint_16 x_position, y_position;
+	char tempString[4];
+
+	x_position = 120;
+	y_position = 100;
+
+	//24*30 box
+	if (Setings_Password_Key_X_position == 1)
+	{
+		Rect_Fill(x_position - 12, 100, x_position + 12, 130, COLOUR_BLACK);
+		sprintf(tempString, "%d", Setings_Password_Key_X2);
+		Draw_string_new(x_position - 5, 100, tempString, COLOUR_WHITE,MEDIUM_FONT);
+	}
+	else
+	{
+		sprintf(tempString, "%d", Setings_Password_Key_X2);
+		Draw_string_new(x_position - 5, 100, tempString, COLOUR_BLACK,MEDIUM_FONT);
+
+	}
+
+	if (Setings_Password_Key_X_position == 0)
+	{
+		Rect_Fill(x_position - 12 - 30, 100, x_position + 12 - 30, 130, COLOUR_BLACK);
+		sprintf(tempString, "%d", Setings_Password_Key_X1);
+		Draw_string_new(x_position - 30 - 5, 100, tempString, COLOUR_WHITE,MEDIUM_FONT);
+	}
+	else
+	{
+		sprintf(tempString, "%d", Setings_Password_Key_X1);
+		Draw_string_new(x_position - 30 - 5, 100, tempString, COLOUR_BLACK,MEDIUM_FONT);
+
+	}
+
+	if (Setings_Password_Key_X_position == 2)
+	{
+		Rect_Fill(x_position - 12 + 30, 100, x_position + 12 + 30, 130, COLOUR_BLACK);
+		sprintf(tempString, "%d", Setings_Password_Key_X3);
+		Draw_string_new(x_position + 30 - 5, 100, tempString, COLOUR_WHITE,MEDIUM_FONT);
+	}
+	else
+	{
+		sprintf(tempString, "%d", Setings_Password_Key_X3);
+		Draw_string_new(x_position + 30 - 5, 100, tempString, COLOUR_BLACK,MEDIUM_FONT);
+
+	}
+
+}
+/*-----------------------------------------------------------------------------* 
+ * Function:    Create_New_Snow_Profile_Calibration_Content
+ * Brief:       This will Create New Snow Profile Calibration screen Content in frame buffer
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+static void Create_New_Snow_Profile_Calibration_Content(void)
+{
+	
+	uint_16 x_position, y_position;
+
+	//    static uint_8 tempCount = 0;
+
+	x_position = (DISPLAY_X_MAX / 2) - 20- (((strlen("  CALIBRATING")) / 2) * NUM_X_PIXEL_PER_CHAR);
+
+	y_position = 115;
+	Draw_string_new(x_position, y_position, (uint_8 *) "  CALIBRATING", COLOUR_BLACK, MEDIUM_FONT);
 
 }
 
@@ -2971,12 +3009,10 @@ void display_Mainmenu(void)
 
 	buff_clear();
 	Draw_Image_on_Buffer((uint_8 *) Default_background);
-	//	Battery_ADC_Init();
-	//	Create_Header();
-	//	Battery_ADC_Deinit();
-
-	Create_Title_calib(Serial_Numbr,strlen(Serial_Numbr),0,2);
-	Create_Title_calib(" CALIBRATION MENU",strlen(" CALIBRATION MENU"),0,22);
+	Battery_ADC_Init();
+	Create_Header();
+	Battery_ADC_Deinit();
+	Create_Title("MENU",strlen("MENU"));
 	Create_Mainmenu_Content();
 	Create_Footer( "",0, "SELECT",strlen("SELECT"));
 
@@ -3023,7 +3059,7 @@ void display_Testmenu(void)
 	Draw_Image_on_Buffer((uint_8 *) test_button_background);
 	Create_Header();
 	Create_Title("NEW TEST",strlen("NEW TEST"));
-	//	Create_Testmenu_Content();
+//	Create_Testmenu_Content();
 	Create_Footer("BACK",strlen("BACK"), "SLOPE",strlen("SLOPE"));
 
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
@@ -3065,7 +3101,7 @@ void display_Snow_Profiles_List(void)
 	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
 	Create_Header();
 	Create_Title("SNOW PROFILES",strlen("SNOW PROFILES"));
-	//	Create_Snow_Profiles_List_Content();
+	Create_Snow_Profiles_List_Content();
 	Create_Footer("BACK",strlen("BACK"), "SELECT",strlen("SELECT"));
 
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
@@ -3092,7 +3128,7 @@ void display_Snow_Profiles_File_List(void)
 			Snow_Profile_Directory[cnt][2],Snow_Profile_Directory[cnt][3]);
 
 	Create_Title(Time_stamp,strlen(Time_stamp));
-	//	Create_Snow_Profiles_File_List_Content();
+	Create_Snow_Profiles_File_List_Content();
 	Create_Footer("BACK",strlen("BACK"), "SELECT",strlen("SELECT"));
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
 
@@ -3109,9 +3145,9 @@ void display_Snow_Profiles_Options(void)
 {
 
 	char tempstring[3];
-
+	
 	display_Snow_Profile_Details();
-	//	Create_Snowprofileoptions_Content();
+	Create_Snowprofileoptions_Content();
 
 	// Draw the icons in the rectangle
 
@@ -3155,12 +3191,12 @@ void display_Snow_Profile_Details(void)
 
 	Create_Header();
 
-	//	if((State_of_Screen==UI_SNOW_PROFILE_DETAILS)||(State_of_Screen==UI_SET_FAVOURITE))
-	//	{
-	//
-	//	//	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
-	//	}
-	//		Create_Snow_Profile_Details_Content();
+//	if((State_of_Screen==UI_SNOW_PROFILE_DETAILS)||(State_of_Screen==UI_SET_FAVOURITE))
+//	{
+//
+//	//	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+//	}
+		Create_Snow_Profile_Details_Content();
 }
 
 /*-----------------------------------------------------------------------------* 
@@ -3492,16 +3528,16 @@ void display_Bluetooth_main(void)
 void display_mass_storage_enable(void)
 {
 	Refresh_Lcd_Buffer((uint_8 *) Mass_Storage_Conn);
-	//	buff_clear();
-	//	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
-	//	Create_Header();
-	//	Create_Title("MASS STORAGE ON",strlen("MASS STORAGE ON"));
-	//
-	//	Create_display_Mass_Storage_Enabled_Content();
-	//
-	//	Create_Footer("",0, "",0);
-	//
-	//	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+//	buff_clear();
+//	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+//	Create_Header();
+//	Create_Title("MASS STORAGE ON",strlen("MASS STORAGE ON"));
+//
+//	Create_display_Mass_Storage_Enabled_Content();
+//
+//	Create_Footer("",0, "",0);
+//
+//	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
 
 }
 /*-----------------------------------------------------------------------------* 
@@ -3517,7 +3553,7 @@ void display_Config_Settings(void)
 	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
 	Create_Header();
 	Create_Title("CONFIG SETTINGS",strlen("CONFIG SETTINGS"));
-	//	Create_Settings_Main_Content();
+	Create_Settings_Main_Content();
 	Create_Footer("BACK",strlen("BACK"), "SELECT",strlen("SELECT"));
 
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
@@ -3537,7 +3573,7 @@ void display_Settings_Selection(void)
 	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
 	Create_Header();
 	Create_Title("SETTINGS SEL",strlen("SETTINGS SEL"));
-	//	Create_Settings_Selection_Content();
+	Create_Settings_Selection_Content();
 	Create_Footer("BACK",strlen("BACK"), "SELECT",strlen("SELECT"));
 
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
@@ -3560,6 +3596,27 @@ void display_Sensor_Output(void)
 	Create_Sensor_Output_Content();
 	Create_Footer("BACK",strlen("BACK"), "",0);
 
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+
+}
+
+
+/*-----------------------------------------------------------------------------* 
+ * Function:    display_Sensor_Output
+ * Brief:       This will display sensor output screen
+ * Parameter:   None
+ * Return:      None
+ -----------------------------------------------------------------------------*/
+void display_ADC_Output(void)
+{
+
+	buff_clear();
+//	Draw_Image_on_Buffer((uint_8 *) left_footer_background);
+//	Create_Header();
+	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+	Create_Title("ADC TEST",strlen("ADC TEST"));
+	Create_ADC_Output_Content();
+	Create_Footer("",0,"",0);
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
 
 }
@@ -3594,7 +3651,7 @@ void display_New_Snow_profile(void)
 	Draw_Image_on_Buffer((uint_8 *) test_button_background);
 	Create_Header();
 	Create_Title("NEW SNOW PROFILE",strlen("NEW SNOW PROFILE"));
-	//	Create_New_Snow_Profile_Content();
+	Create_New_Snow_Profile_Content();
 	Create_Footer("BACK",strlen("BACK"), "",0);
 
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
@@ -3710,7 +3767,7 @@ void display_New_Snow_profile_processing(void)
 
 void display_New_Snow_profile_processing_Only()
 {
-	//	Create_New_Snow_Profile_processing_Content();
+	Create_New_Snow_Profile_processing_Content();
 	//	 Refresh_Lcd_Buffer((uint_8 *) frame_buff);
 	Refresh_Lcd_Buffer_Loading_Image((uint_8 *) frame_buff);
 }
@@ -3804,7 +3861,7 @@ void display_New_Snow_profile_complete(void)
 	Draw_string_new(120, 2, list_num, COLOUR_BLACK, MEDIUM_FONT);
 
 	Create_Header();
-	//	Create_Snow_Profile_Details_Content();
+	Create_Snow_Profile_Details_Content();
 
 }
 /*-----------------------------------------------------------------------------* 
@@ -3820,7 +3877,7 @@ void display_New_Snow_profile_discard(void)
 	Draw_Image_on_Buffer((uint_8 *) Default_background);
 	Create_Header();
 	Create_Title("NEW SNOW PROFILE",strlen("NEW SNOW PROFILE"));
-	//	Create_Snow_Profile_Discard_Content();
+	Create_Snow_Profile_Discard_Content();
 	Create_Footer("DISCARD",strlen("DISCARD"),"CANCEL",strlen("CANCEL"));
 
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
@@ -3856,7 +3913,7 @@ void display_Link_Slope_with_Profile(void)
 	Draw_Image_on_Buffer((uint_8 *) Default_background);
 	Create_Header();
 	Create_Title("LINK SNOW PROFILE",strlen("LINK SNOW PROFILE"));
-	//	Create_Snow_Profiles_List_Content();
+	Create_Snow_Profiles_List_Content();
 	Create_Footer("BACK",strlen("BACK"),"LINK",strlen("LINK"));
 
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
@@ -3909,7 +3966,7 @@ void display_Settings_Password(void)
 	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
 	Create_Header();
 	Create_Title("ENTER PASSWORD",strlen("ENTER PASSWORD"));
-	//	Create_Settings_Password_Content();
+	Create_Settings_Password_Content();
 	Create_Footer("BACK",strlen("BACK"),"NEXT",strlen("NEXT"));
 
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
@@ -3927,6 +3984,7 @@ void display_Settings_Main(void)
 	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
 	Create_Header();
 	Create_Title("SETTINGS",strlen("SETTINGS"));
+	Create_Settingsmenu_Content();
 	Create_Footer("BACK",strlen("BACK"),"SELECT",strlen("SELECT"));
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
 
@@ -3999,7 +4057,7 @@ void display_error_screen_during_test(void)
 	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
 	Create_Header();
 	Create_Title("NEW TEST",strlen("NEW TEST"));
-	//	Create_error_screen_during_test_Content();
+	Create_error_screen_during_test_Content();
 	Create_Footer("CANCEL",strlen("CANCEL"), "RETRY",strlen("RETRY"));
 
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
@@ -4036,7 +4094,7 @@ void dispaly_battery_low(void)
 	_time_delay(1000);
 	Refresh_Lcd_Buffer((uint_8 *) Battery_low_1);
 	_time_delay(500);
-
+	
 }
 /*-----------------------------------------------------------------------------* 
  * Function:    Handle_battery_related_issues
@@ -4330,10 +4388,8 @@ void Low_battery_shutdown(void)
 	State_of_Screen = UI_CANT_PROCEED_NEED_TO_TURN_OFF;
 	De_Init_HardWare_When_Battery_Low();
 	Kill_OFF_Controller();
-	while(1) 
-	{};
-
+	while(1);
 }
-/*-------------- -------------------------------------------------------------
+/*-----------------------------------------------------------------------------
  **************************  END   ***************************************
  -----------------------------------------------------------------------------*/

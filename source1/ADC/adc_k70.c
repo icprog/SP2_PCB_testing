@@ -13,18 +13,19 @@
  *END************************************************************************/
 
 #include "common_headers.h"
-#include "Sensor_Configuration.h"
-#include "batt_level_algorithm.h"
+#include "adc_mk70.h"
 
 #define ADC_VREF_EN_PIN   		(GPIO_PORT_C|GPIO_PIN8)
 #define ADC_VREF_EN_PIN_MUX  	(LWGPIO_MUX_C8_GPIO)
 #define BAT_MON_EN_PIN   		(GPIO_PORT_A|GPIO_PIN15)
 #define BAT_MON_EN_PIN_MUX  	(LWGPIO_MUX_A15_GPIO)
 
+#define ENABLE_ROS2				(1)
+
 LWGPIO_STRUCT ADC_VREF_EN;
 LWGPIO_STRUCT BAT_MON_EN;
 
-MQX_FILE_PTR 		fd_adc0,fd_adc1,fd_adc2 ,ir_sens,force_sens,ros_sens1,batt_sens,batt_current,batt_temp,ros_sens2;	
+MQX_FILE_PTR 		fd_adc0,fd_adc1,fd_adc2 ,ir_sens,force_sens,ros_sens1,ros_sens2,batt_sens,batt_current,batt_temp;	
 uint_8 Batt_Adc_Not_Need_Flag=0;
 
 /* ADC device init struct */
@@ -40,7 +41,7 @@ const ADC_INIT_CHANNEL_STRUCT ir_sensor_para =
 		ADC1_SOURCE_AD1 ,  // ADC1DP1 = D29
 		ADC_CHANNEL_MEASURE_LOOP | ADC_CHANNEL_START_TRIGGERED, /*ADC_CHANNEL_MEASURE_LOOP runs continuously after IOCTL trigger */
 		5,           /* number of samples in one run sequence */
-		25,            /* time offset from trigger point in us */
+		5,            /* time offset from trigger point in us */
 		80,          /* period in us (= 0.3 sec) */
 		0x10000,      /* scale range of result (not used now) */
 		5,           /* circular buffer size (sample count) */
@@ -75,7 +76,7 @@ const ADC_INIT_CHANNEL_STRUCT battery_voltage_para =
 		ADC1_SOURCE_AD16,	// ADC1SE16 = 
 		ADC_CHANNEL_MEASURE_LOOP | ADC_CHANNEL_START_TRIGGERED,//ADC_CHANNEL_MEASURE_ONCE | ADC_CHANNEL_START_NOW, /* one sequence is sampled after fopen */
 		5,             /* number of samples in one run sequence */
-		5,         	/* time offset from trigger point in us */
+		15,         	/* time offset from trigger point in us */
 		80,         	/* period in us (= 0.6 sec) */
 		0x10000,        /* scale range of result (not used now) */
 		5,             /* circular buffer size (sample count) */
@@ -91,8 +92,8 @@ const ADC_INIT_CHANNEL_STRUCT optical_sensor_para =
 
 		ADC0_SOURCE_AD0 ,  // ADC0DP0
 		ADC_CHANNEL_MEASURE_LOOP | ADC_CHANNEL_START_TRIGGERED, /*ADC_CHANNEL_MEASURE_LOOP runs continuously after IOCTL trigger */
-		10,           /* number of samples in one run sequence */
-		15,            /* time offset from trigger point in us */
+		5,           /* number of samples in one run sequence */
+		20,            /* time offset from trigger point in us */
 		80,          /* period in us (= 0.3 sec) */
 		0x10000,      /* scale range of result (not used now) */
 		5,           /* circular buffer size (sample count) */
@@ -110,7 +111,7 @@ const ADC_INIT_CHANNEL_STRUCT ROS_2_para =
 		ADC0_SOURCE_AD3 ,  // ADC0DP0
 		ADC_CHANNEL_MEASURE_LOOP | ADC_CHANNEL_START_TRIGGERED, /*ADC_CHANNEL_MEASURE_LOOP runs continuously after IOCTL trigger */
 		5,           /* number of samples in one run sequence */
-		25,            /* time offset from trigger point in us */
+		30,            /* time offset from trigger point in us */
 		80,          /* period in us (= 0.3 sec) */
 		0x10000,      /* scale range of result (not used now) */
 		5,           /* circular buffer size (sample count) */
@@ -128,7 +129,7 @@ const ADC_INIT_CHANNEL_STRUCT Batt_current_para =
 		ADC0_SOURCE_AD23 ,  // ADC0DP0
 		ADC_CHANNEL_MEASURE_LOOP | ADC_CHANNEL_START_TRIGGERED, /*ADC_CHANNEL_MEASURE_LOOP runs continuously after IOCTL trigger */
 		5,           /* number of samples in one run sequence */
-		5,            /* time offset from trigger point in us */  //TODO: given same as optical_sensor_para 30, Change if needed.
+		10,            /* time offset from trigger point in us */  //TODO: given same as optical_sensor_para 30, Change if needed.
 		80,          /* period in us (= 0.3 sec) */
 		0x10000,      /* scale range of result (not used now) */
 		5,           /* circular buffer size (sample count) */
@@ -146,7 +147,7 @@ const ADC_INIT_CHANNEL_STRUCT Batt_temp_para =
 		ADC1_SOURCE_AD23  ,  // ADC0DP0
 		ADC_CHANNEL_MEASURE_LOOP | ADC_CHANNEL_START_TRIGGERED, /*ADC_CHANNEL_MEASURE_LOOP runs continuously after IOCTL trigger */
 		5,           /* number of samples in one run sequence */
-		15,            /* time offset from trigger point in us */ //TODO: given same as battery_voltage_para 30, Change if needed.
+		25,            /* time offset from trigger point in us */ //TODO: given same as battery_voltage_para 30, Change if needed.
 		80,          /* period in us (= 0.3 sec) */
 		0x10000,      /* scale range of result (not used now) */
 		5,           /* circular buffer size (sample count) */
@@ -157,17 +158,8 @@ const ADC_INIT_CHANNEL_STRUCT Batt_temp_para =
 #endif
 };
 
-/************************* FUNCTION DEFINITIONS ************************/
-
 void Stop_PDB_Timer(void);
-static void Read_Battery_Data(float *,float *,float *);
 
-/*-----------------------------------------------------------------------------
- *  Function:     Battery_Monitor_Init
- *  Brief:        This functions initialise Battery monitor GPIO pins.
- *  Parameter:    None
- *  Return:       None
------------------------------------------------------------------------------*/
 void Battery_Monitor_Init()
 {
 	if (!lwgpio_init(&BAT_MON_EN, BAT_MON_EN_PIN, LWGPIO_DIR_OUTPUT, LWGPIO_VALUE_HIGH))
@@ -179,34 +171,16 @@ void Battery_Monitor_Init()
 	lwgpio_set_value(&BAT_MON_EN, LWGPIO_VALUE_LOW);
 }
 
-/*-----------------------------------------------------------------------------
- *  Function:     Battery_Monitor_Enable
- *  Brief:        This functions Enables Battery monitor GPIO pins.
- *  Parameter:    None
- *  Return:       None
------------------------------------------------------------------------------*/
 void Battery_Monitor_Enable()
 {
 	lwgpio_set_value(&BAT_MON_EN, LWGPIO_VALUE_HIGH);
 }
 
-/*-----------------------------------------------------------------------------
- *  Function:     Battery_Monitor_Disable
- *  Brief:        This functions Disables Battery monitor GPIO pins.
- *  Parameter:    None
- *  Return:       None
------------------------------------------------------------------------------*/
 void Battery_Monitor_Disable()
 {
 	lwgpio_set_value(&BAT_MON_EN, LWGPIO_VALUE_LOW);
 }
 
-/*-----------------------------------------------------------------------------
- *  Function:     ADC_Vref_Init
- *  Brief:        This functions Initialise the ADC reference GPIO pins.
- *  Parameter:    None
- *  Return:       None
------------------------------------------------------------------------------*/
 void ADC_Vref_Init()
 {
 	if (!lwgpio_init(&ADC_VREF_EN, ADC_VREF_EN_PIN, LWGPIO_DIR_OUTPUT, LWGPIO_VALUE_HIGH))
@@ -282,7 +256,7 @@ void ADC_deinit(void)
 			printf("\nros_sens1 close Error\n");
 		}
 	}
-
+#if ENABLE_ROS2	
 	if(ros_sens2  != NULL)
 	{    
 		if(MQX_OK != fclose(ros_sens2))
@@ -290,6 +264,7 @@ void ADC_deinit(void)
 			printf("\nros_sens2 close Error\n");
 		}
 	}
+#endif	
 
 	/**********************************De init Distance Sensor channel*************************************/
 	if(ir_sens != NULL)
@@ -524,6 +499,8 @@ void ADC_Init(void)
 	
 /***************Configuring Reflective Object sensor*********************/
 	
+
+		
 //	printf("Opening Reflective Object sensor 1 channel  ...");
 	ros_sens1= fopen(ADC0 "zero", (const char*)&optical_sensor_para);
 	if(ros_sens1 != NULL)
@@ -534,12 +511,14 @@ void ADC_Init(void)
 		printf("ros_sens1 init failed\n");
 	}
 	
+#if ENABLE_ROS2	
 	//	printf("Opening Reflective Object sensor 2 channel  ...");
 	ros_sens2= fopen(ADC0 "three", (const char*)&ROS_2_para);
 	if(ros_sens2 == NULL)
 	{    
 		printf("ros_sens2 init failed\n");
 	}
+#endif
 	
 /***************Configuring Battery ADC pins*********************/ 
 	
@@ -552,34 +531,117 @@ void ADC_Init(void)
 	{    
 		printf("Battery Voltage ADC init failed\n");
 	}
-
-//	printf("Opening Battery Current sensor channel  ...");
+	//	printf("Opening Battery Current sensor channel  ...");
 	batt_current = fopen(ADC0 "twenty three", (const char*)&Batt_current_para);
-	if(ros_sens1 != NULL)
+	if(batt_current != NULL)
 	{    
 	}
 	else
 	{    
 		printf("Battery Current ADC init failed\n");
 	}
-	
-//	printf("Opening Battery Temperature sensor channel  ...");
+	//	printf("Opening Battery Temperature sensor channel  ...");
 	batt_temp = fopen(ADC1 "twenty three", (const char*)&Batt_temp_para); /* adc:2 is running now */	
-	if(batt_sens != NULL)
+	if(batt_temp != NULL)
 	{    
 	}
 	else
 	{    
 		printf("Battery failed\n");
 	}
-
 	
+
 		
-//	printf("Triggering all channels...");
+	printf("Triggering all channels...\n");
 	ioctl(fd_adc0, ADC_IOCTL_FIRE_TRIGGER, (pointer) MY_TRIGGER);
 	ioctl(fd_adc1, ADC_IOCTL_FIRE_TRIGGER, (pointer) MY_TRIGGER);
 	ioctl(fd_adc2, ADC_IOCTL_FIRE_TRIGGER, (pointer) MY_TRIGGER);
 }  
+
+/*-----------------------------------------------------------------------------
+ *  Function:     Start_ADC
+ *  Brief:        Configure and starts Force,QRD and depth sensor ADC channel. 
+ 	              Stops Battery ADC channel.
+ *  Parameter:    None
+ *  Return:       None
+-----------------------------------------------------------------------------*/
+//void Start_ADC(void)
+//{   
+////    Batt_Adc_Not_Need_Flag=1;
+//
+//	/********************************** Stops Battery Sensor channel*************************************/
+//    
+//
+//    
+////	ioctl(fd_adc0, ADC_IOCTL_STOP_CHANNEL, (pointer) MY_TRIGGER);
+////	if(MQX_OK==fclose(batt_sens))
+////	{
+////		batt_sens=NULL;
+////		printf("\n Battery sensor closed succesfully\n");
+////	}
+////	else
+////	{
+////		printf("\n Battery sensor close Error\n");
+////	}
+//	
+//	/********************************** Configure optical Sensor channel*************************************/
+//	printf("Opening IRDM Sensor channel  ...");
+//	ir_sens = fopen(ADC1 "zero", (const char*)&ir_sensor_para);
+//	if(ir_sens != NULL)
+//	{    
+//		printf("done, prepared to start by trigger\n");
+//	}
+//	else
+//	{    
+//		printf("failed\n");
+//	}
+//
+//	/********************************** Configure QRD Sensor channel*************************************/
+//	printf("Opening Reflective Object sensor channel  ...");
+//	optical_sens= fopen(ADC1 "sixteen", (const char*)&optical_sensor_para);
+//	if(optical_sens != NULL)
+//	{    
+//		printf("done, prepared to start by trigger\n");
+//	}
+//	else
+//	{    
+//		printf("failed\n");
+//	}
+//	
+//	/********************************** Configure Force Sensor channel*************************************/
+//	printf("Opening Force sensor channel  ...");
+//	force_sens = fopen(ADC0 "zero", (const char*)&force_sensor_para); /* adc:2 is running now */	
+//	if(force_sens != NULL)
+//	{    
+//		printf("done, one sequence started automatically\n");
+//	}
+//	else
+//	{    
+//		printf("failed\n");
+//	}
+//
+//	
+//	/********************************** Configure Battery Sensor channel*************************************/	
+//	
+//	printf("Opening  Battery sensor channel  ...");
+//	batt_sens = fopen(ADC1 "thirteen", (const char*)&battery_sensor_para); /* adc:2 is running now */	
+//	if(batt_sens != NULL)
+//	{    
+//		printf("done, one sequence started automatically\n");
+//	}
+//	else
+//	{    
+//		printf("failed\n");
+//	}
+//    
+////	Batt_Adc_Not_Need_Flag=0;
+////	ioctl(fd_adc0, ADC_IOCTL_FIRE_TRIGGER, (pointer) MY_TRIGGER);
+////	printf("Triggering Battery sensor ...");
+//    
+//	/********************************** Trigger Force,depth and QRD Sensor*************************************/
+//	ioctl(fd_adc1, ADC_IOCTL_FIRE_TRIGGER, (pointer) MY_TRIGGER);
+//	ioctl(fd_adc0, ADC_IOCTL_FIRE_TRIGGER, (pointer) MY_TRIGGER);
+//}
 
 
 /*-----------------------------------------------------------------------------
@@ -593,46 +655,36 @@ void Stop_ADC(void)
 
 	ioctl(fd_adc0, IOCTL_ADC_STOP_CHANNELS, (pointer) MY_TRIGGER);
 	ioctl(fd_adc1, IOCTL_ADC_STOP_CHANNELS, (pointer) MY_TRIGGER);
-	ioctl(fd_adc2, IOCTL_ADC_STOP_CHANNELS, (pointer) MY_TRIGGER);
 	
 	
-	ioctl(fd_adc0, ADC_IOCTL_STOP_CHANNEL, (pointer) MY_TRIGGER);
-	if(MQX_OK==fclose(batt_sens))
-	{
-		batt_sens=NULL;
-		printf("\n Battery sensor closed successfully\n");
-	}
-	else
-	{
-		printf("\n Battery sensor close Error\n");
-	}
+	
+		ioctl(fd_adc0, ADC_IOCTL_STOP_CHANNEL, (pointer) MY_TRIGGER);
+		if(MQX_OK==fclose(batt_sens))
+		{
+			batt_sens=NULL;
+			printf("\n Battery sensor closed successfully\n");
+		}
+		else
+		{
+			printf("\n Battery sensor close Error\n");
+		}
 	
 	/***********************************************************************/
 	if(MQX_OK==fclose(ros_sens1))
 	{
 		ros_sens1=NULL;
-		printf("\nros_sens1 closed successfully\n");
+		printf("\noptical_sens closed successfully\n");
 	}
 	else
 	{
-		printf("\nros_sens1 close Error\n");
-	}
-	
-	if(MQX_OK==fclose(ros_sens2))
-	{
-		ros_sens2=NULL;
-		printf("\nros_sens2 closed successfully\n");
-	}
-	else
-	{
-		printf("\nros_sens2 close Error\n");
+		printf("\noptical_sens close Error\n");
 	}
 	
 	/***********************************************************************/
 	if(MQX_OK==fclose(ir_sens))
 	{
 		ir_sens=NULL;	
-		printf("\nir_sens closed successfully\n");
+		printf("\nir_sens closed succesfully\n");
 	}
 	else
 	{
@@ -643,7 +695,7 @@ void Stop_ADC(void)
 	if(MQX_OK==fclose(force_sens))
 	{
 		force_sens=NULL;	
-		printf("\nforce sensor closed successfully\n");
+		printf("\nforce sensor closed succesfully\n");
 	}
 	else
 	{
@@ -660,91 +712,61 @@ void Stop_ADC(void)
  *  Parameter:    None
  *  Return:       Battery Voltage in Hex format
 -----------------------------------------------------------------------------*/
-static void Read_Battery_Data(float *volt,float *curr,float *temp)
+uint_16 Read_Battery(void)
 {
-	uint_32 Volt_adc_res = 0;
-	uint_32 Curr_adc_res = 0;
-	uint_32 Temp_adc_res = 0;
+	static uint_16 Adc_Prev=0;
+	static uint_8  adc_check=0;
+
+	uint_32 adc_res=0;
 	
-	static float  Volt_Prev = 2.9;
-	static float  Curr_Prev = 0.75;
-	static float  Temp_Prev = 1.40;
-	
-	uint8_t Voltsample_count = 0;
-	uint8_t Currsample_count = 0;
-	uint8_t Tempsample_count = 0;
-	
-	ADC_RESULT_STRUCT adc_out;	
-	
-	/* Reading 5 samples of Battery parameters*/
-	Time_Delay_Sleep(5);
-	for(int i=0;i<5;i++)
+	uint_8 	i=0;
+	uint_8 sample_count=0;
+
+	ADC_RESULT_STRUCT adc_out;
+
+	/********************************* Takes the average values of Battery Voltage***********************************/
+	if(Batt_Adc_Not_Need_Flag == 0)
 	{
-//		_time_delay(2);
-		adc_out.result = 0;
-		if (read(batt_sens, &adc_out,sizeof(adc_out)))
+		for(i=0;i<5;)
 		{
-			Volt_adc_res += adc_out.result;	
-			Voltsample_count++;
+			
+			if (read(batt_sens, &adc_out,sizeof(adc_out)))
+			{
+//				printf("Battery Sensor ADC = %d ",adc_out.result);
+				adc_res+= adc_out.result;	
+				sample_count++;
+				i++;
+			}
 		}
-		
-		adc_out.result = 0;
-		if (read(batt_current, &adc_out,sizeof(adc_out)))
+		if(sample_count!=0)
 		{
-			Curr_adc_res += adc_out.result;	
-			Currsample_count++;
+			adc_res/=sample_count;
+			adc_check=0;
 		}
-		
-		adc_out.result = 0;
-		if (read(batt_temp, &adc_out,sizeof(adc_out)))
+		else
 		{
-			Temp_adc_res += adc_out.result;	
-			Tempsample_count++;
+			adc_check++;
+			if(adc_check>4)
+			{
+				adc_check=0;
+				return 0;
+			}
+
+			return Adc_Prev;
 		}
-	}
+		Adc_Prev=adc_res;
 	
-	/* Average the 5 samples*/
-	if( (Voltsample_count != 0) && ( Currsample_count != 0)  && (Tempsample_count != 0))
-	{
-		Volt_adc_res /= Voltsample_count;
-		Curr_adc_res /= Currsample_count;
-		Temp_adc_res /= Tempsample_count;
-		*volt = Volt_Prev = Volt_adc_res * BATTERY_VOLTAGE_MULTIPILER;
-		*curr = Curr_Prev = Curr_adc_res * BATTERY_VOLTAGE_MULTIPILER;
-		*temp = Temp_Prev = Temp_adc_res * RAW_DATA_TO_VOLTAGE_MULTIPLIER;
+		/*********************** Returns current battery voltage *****************************/
+		return (adc_res);
 	}
 	else
 	{
-		*volt = Volt_Prev; 
-		*curr = Curr_Prev;
-		*temp = Temp_Prev;			
+		/*********************** Returns previous battery voltage *****************************/
+		return Adc_Prev;
 	}
-	
-	*curr = (*curr/200)/(0.05); //The amplifier used for the current sense resistor is the Texas Instruments INA216A4RSWR. 
-								//This has a gain of 200. The sense resistor is 0.05 Ohms.So the Current Value = Output/200/0.05
-
-	*temp = ((1.8583 - *temp)/11.67) * 1000;  // Temp –40 to +85°C 
 
 }
 
-/*-----------------------------------------------------------------------------
- *  Function:     Read_Battery_Capacity
- *  Brief:        Calculates battery capacity from Raw battery data. 
- *  Parameter:    None
- *  Return:       Battery Capacity
------------------------------------------------------------------------------*/
-float Read_Battery_Capacity(void)
-{
-	float volt = 0.0;
-	float curr = 0.0;
-	float temp = 0.0;
-	float Battery_Capacity = 0.0;
-	float capacityBin = 0.0;
-	
-	Read_Battery_Data(&volt,&curr,&temp);
-	triBattInterp( temp, curr, volt, &Battery_Capacity,&capacityBin);
-	return Battery_Capacity;
-}
 /*-----------------------------------------------------------------------------
  *  Function:     Stop_PDB_Timer
  *  Brief:        Stops PDB timer to avoid further triggering of ADC channels. 
@@ -776,3 +798,23 @@ void Start_PDB_Timer(void)
 
 }
 
+/*-----------------------------------------------------------------------------
+ *  Function:     Test_ADC
+ *  Brief:        Displays all ADC channels output. 
+ *  Parameter:    None
+ *  Return:       None
+-----------------------------------------------------------------------------*/
+void Test_ADC(void)
+{
+	uint8_t i =0;
+	power_rail_enable();
+	
+	State_of_Screen = UI_NEW_SNOW_PROFILE_COLLECTING;
+	for(i = 0; i < 30;i++)
+	{
+		display_ADC_Output();				
+	}
+	State_of_Screen = UI_MAINMENU_LIST;
+	
+
+}

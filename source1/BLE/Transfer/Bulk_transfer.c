@@ -70,6 +70,14 @@ uint_8 Ble_Module_init(void)
 {
 	uint_8 status=0;	
 	idevice_ready = NO;
+	
+	/* Initialise the BLE_wakeup_pin  pin */
+	Ble_Host_Interrupt_init();		
+	/* Initialise the BLE wakeup pin */
+	Ble_wakeup_pin_init();	
+	/* Initialise the BLE reset pin and Enable BLE */
+	Ble_reset_pin_init();
+	
 	/* Enable_BLE from BLE */
 	Enable_BLE();
 
@@ -83,7 +91,7 @@ uint_8 Ble_Module_init(void)
 	iDevices_Init(NULL);
 
 	
-	uint_32 BLE_Ready_count = 10000000;	
+	uint_32 BLE_Ready_count = 100000000;	
 	while(idevice_ready == NO && BLE_Ready_count !=0)
 	{
 		BLE_Ready_count--;
@@ -687,5 +695,34 @@ void Disable_BLE(void)
  		printf("\nDevice_serial_no reading failed\n");
  	}
  	
+ }
+ void Test_BLE()
+ {
+     printf("\n***********STARTING BLE TEST*************\n");
+ 	buff_clear();
+	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+	Create_Title("BLE TEST",strlen("BLE TEST"));
+ 	Draw_string_new(15,80, (uint_8 *)"STARTING BLE TEST",COLOUR_BLACK,MEDIUM_FONT);
+ 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+ 	_time_delay(1000);
+
+ 	
+ 		if(Ble_Module_init()==0)
+ 		{
+ 			 printf("BLE TESTING SUCCESS...\n");
+ 			 Draw_string_new(25,200, (uint_8 *)"BLE TEST SUCCESS",COLOUR_BLACK,MEDIUM_FONT);
+
+ 		}
+ 		else
+ 		{
+ 			printf("BLE TESTING FAIL...\n");
+ 			Draw_string_new(25,200, (uint_8 *)"BLE TEST FAILED",COLOUR_BLACK,MEDIUM_FONT);
+
+ 		}
+ 		
+ 	Disable_BLE();
+ 	printf("\n************BLE TEST COMPLETED*************\n");
+ 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+ 	_time_delay(1000);
  }
 

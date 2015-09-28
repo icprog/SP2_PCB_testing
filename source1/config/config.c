@@ -20,7 +20,7 @@
 char Drive_Name[20] = {'\0'};
 char Device_id[]  = "0000-0000-0001";
 const char User_id[]	= "User_001";
-const char Software_ver[]= "V-1.0.76";
+const char Software_ver[]= "V-1.0.77";
 unsigned char  Device_serial_no[6] ={'\0'};
 
 uint_32 Adc_sample_rate = 2500;

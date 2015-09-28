@@ -41,17 +41,17 @@
 
 char 	 BUSY=FALSE,Read_LSM=0;
 LWGPIO_STRUCT PWR_5V_RAIL,KILL_CONTROL;
-
+void Test_gpio_buttons(void);
 
 LWEVENT_STRUCT                  app_event,Lsm_Event;
 
 const TASK_TEMPLATE_STRUCT  MQX_template_list[] =
 {
 		/* Task Index,   Function,   Stack,  Priority,   Name,   Attributes,          Param, Time Slice */
-//		{ BLE_PROCESS_TASK,BLE_Process_Task,6000,7,"BLE_Process_Task",MQX_AUTO_START_TASK | MQX_FLOATING_POINT_TASK,0,0},
-//		{ TEST_TASK, Test_task, 2000,	8, "Main",MQX_AUTO_START_TASK | MQX_FLOATING_POINT_TASK, 0,0},
-//		{ 2, Lsm_Task, 2000,	8, "Lsm",MQX_AUTO_START_TASK | MQX_FLOATING_POINT_TASK, 0,0},
-		{ UI_TASK,	 UI_Task, 15000,9,"User_Interface", MQX_AUTO_START_TASK | MQX_FLOATING_POINT_TASK,0,0	},
+		{ BLE_PROCESS_TASK,BLE_Process_Task,6000,7,"BLE_Process_Task",MQX_AUTO_START_TASK | MQX_FLOATING_POINT_TASK,0,0},
+		{ TEST_TASK, Test_task, 2000,	8, "Main",MQX_AUTO_START_TASK | MQX_FLOATING_POINT_TASK, 0,0},
+		{ 2, Lsm_Task, 2000,	8, "Lsm",MQX_AUTO_START_TASK | MQX_FLOATING_POINT_TASK, 0,0},
+		{ UI_TASK,	 UI_Task, 10000,9,"User_Interface", MQX_AUTO_START_TASK | MQX_FLOATING_POINT_TASK,0,0	},
 		{ 0 }
 };
 
@@ -192,3 +192,180 @@ void Lsm_Task(uint_32)
 		LSM_Updating_Flag=0;
 	}
 }
+
+void Perform_Startup_Test(void)
+{
+	power_rail_init();
+	power_rail_enable();
+	Kill_Controller_Init();
+	Kill_ON_Controller();
+	OSC_EN_init();
+	ui_timer_init();
+	Test_gpio_buttons();
+	Test_backlight();
+	Test_DDR();	//Perform LPDDR Test
+	Test_Sd_card();
+	Test_ADC();
+	
+	Battery_ADC_Init();
+	Create_Header();
+	Battery_ADC_Deinit();
+	
+	Test_Buzzer();
+	Test_lsm303();
+	Test_Tmp006();
+	Test_BLE();	
+	Test_Gps();
+	ui_timer_de_init();
+	power_rail_disable();
+}
+
+void Test_gpio_buttons(void)
+{
+	uint_8 lb_status = 0,rb_status = 0,ub_status = 0,db_status = 0,tb_status = 0;
+	buff_clear();
+//	Draw_string_new(60,10,(uint_8*)"BUTTON TEST",COLOUR_BLACK,MEDIUM_FONT);
+//	Draw_Rect(55,10,175,40,COLOUR_BLACK);
+//	Draw_Rect(54,9,176,41,COLOUR_BLACK);
+	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+	Create_Title("BUTTON TEST",strlen("BUTTON TEST"));
+	_time_delay(1000);
+	Draw_string_new(10,80,(uint_8*)"STARTING BUTTON TEST",COLOUR_BLACK,MEDIUM_FONT);
+
+	printf("\n20 SECOND TEST\n");
+	Draw_string_new(10,110,(uint_8*)"20 SECOND TEST",COLOUR_BLACK,MEDIUM_FONT);
+	printf("\nPRESS ANY BUTTON\n");
+	Draw_string_new(10,150,(uint_8*)"PRESS ANY BUTTON",COLOUR_BLACK,MEDIUM_FONT);
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	
+	ui_timer_start(20000); ///30 sec
+
+	while(Check_UI_Timer_Timeout()!= TIME_OUT)
+	{
+		if (Button_Press_Status != BUTTON_PRESS_NOT_PENDING)
+		{
+			switch (Button_Press_Status)
+			{
+			case LEFT_BUTTON_PRESSED:
+
+				printf("Left Button Pressed \n");
+				lb_status = 1;
+				Rect_Fill(1,219,239,245,COLOUR_WHITE);
+				Draw_string_new(10,220,(uint_8*)"LEFT BUTTON PRESSED!!",COLOUR_BLACK,MEDIUM_FONT);
+				Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+
+				break;
+
+			case RIGHT_BUTTON_PRESSED:
+				printf("Right Button Pressed \n");
+				rb_status = 1;
+				Rect_Fill(1,219,239,245,COLOUR_WHITE);
+				Draw_string_new(10,220,(uint_8*)"RIGHT BUTTON PRESSED!!",COLOUR_BLACK,MEDIUM_FONT);
+				Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+
+
+				break;
+
+			case UP_BUTTON_PRESSED:
+
+				printf("Up Button Pressed \n"); 
+				ub_status = 1;
+				Rect_Fill(1,219,239,245,COLOUR_WHITE);
+				Draw_string_new(10,220,(uint_8*)"UP BUTTON PRESSED!!",COLOUR_BLACK,MEDIUM_FONT);
+				Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+				break;
+
+			case DOWN_BUTTON_PRESSED:
+				printf("Down Button Pressed \n");
+				db_status = 1;
+				Rect_Fill(1,219,239,245,COLOUR_WHITE);
+				Draw_string_new(10,220,(uint_8*)"DOWN BUTTON PRESSED!!",COLOUR_BLACK,MEDIUM_FONT);
+				Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+				break;
+
+			case TEST_BUTTON_PRESSED:
+				printf("Test Button Pressed \n");
+				tb_status = 1;
+				Rect_Fill(1,219,239,245,COLOUR_WHITE);
+				Draw_string_new(10,220,(uint_8*)"TEST BUTTON PRESSED!!",COLOUR_BLACK,MEDIUM_FONT);
+				Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+				break;
+
+			default:
+				printf("Invalid Button Pressed \n");
+				break;
+			}
+			Button_Press_Status = BUTTON_PRESS_NOT_PENDING;
+		}
+		else if((lb_status == 1) && (rb_status == 1) && (ub_status == 1) && (db_status == 1) && (tb_status == 1))
+		{
+			ui_timer_stop();
+//			Rect_Fill(1,219,239,245,COLOUR_WHITE);
+//			Draw_string_new(10,220,(uint_8*)"BUTTON TEST SUCCESS",COLOUR_BLACK,MEDIUM_FONT);
+//			Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+			break;
+		}
+	}
+
+
+	Rect_Fill(1,219,239,245,COLOUR_WHITE);
+	
+	if(lb_status == 1)
+	{
+		Draw_string_new(10,180,(uint_8*)"LEFT BUTTON: SUCCESS",COLOUR_BLACK,MEDIUM_FONT);
+		printf("\n LEFT BUTTON: SUCCESS \n");
+	}
+	else
+	{
+		Draw_string_new(10,180,(uint_8*)"LEFT BUTTON: FAILED",COLOUR_BLACK,MEDIUM_FONT);
+		printf("\n LEFT BUTTON: FAILED \n");
+	}
+	
+	if(rb_status == 1)
+	{
+		Draw_string_new(10,205,(uint_8*)"RIGHT BUTTON: SUCCESS",COLOUR_BLACK,MEDIUM_FONT);
+		printf("\n RIGHT BUTTON: SUCCESS \n");
+	}
+	else
+	{
+		Draw_string_new(10,205,(uint_8*)"RIGHT BUTTON: FAILED",COLOUR_BLACK,MEDIUM_FONT);
+		printf("\n RIGHT BUTTON: FAILED \n");
+	}
+	if(ub_status == 1)
+	{
+		Draw_string_new(10,240,(uint_8*)"UP BUTTON: SUCCESS",COLOUR_BLACK,MEDIUM_FONT);
+		printf("\n UP BUTTON: SUCCESS \n");
+	}
+	else
+	{
+		Draw_string_new(10,240,(uint_8*)"UP BUTTON: FAILED",COLOUR_BLACK,MEDIUM_FONT);
+		printf("\n UP BUTTON: FAILED \n");
+	}
+	if(db_status == 1)
+	{
+		Draw_string_new(10,265,(uint_8*)"DOWN BUTTON: SUCCESS",COLOUR_BLACK,MEDIUM_FONT);
+		printf("\n DOWN BUTTON: SUCCESS \n");
+	}
+	else
+	{
+		Draw_string_new(10,265,(uint_8*)"DOWN BUTTON: FAILED",COLOUR_BLACK,MEDIUM_FONT);
+		printf("\n DOWN BUTTON: FAILED \n");
+	}
+	if(tb_status == 1)
+	{
+		Draw_string_new(10,290,(uint_8*)"TEST BUTTON: SUCCESS",COLOUR_BLACK,MEDIUM_FONT);
+		printf("\n TEST BUTTON: SUCCESS \n");
+	}
+	else
+	{
+		Draw_string_new(10,290,(uint_8*)"TEST BUTTON: FAILED",COLOUR_BLACK,MEDIUM_FONT);
+		printf("\n TEST BUTTON: FAILED \n");
+	}
+	
+	ui_timer_stop();
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	printf("\n\n********GPIO BUTTON TEST COMPLETE*********\n\n");
+	_time_delay(2000);
+	return;
+}
+

@@ -61,6 +61,34 @@ void Buzzer_Long_Beep(void)
 //	Buzzer_On();
     Long_beep_timer_start(LONG_BEEP_TIME);
 }
+
+void Test_Buzzer(void)
+{
+	printf("\n***********STARTING BUZZER TEST***********\n");
+	buff_clear();
+	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+	Create_Title("BUZZER TEST",strlen("BUZZER TEST"));
+	_time_delay(1000);
+	Draw_string_new(10,80,"STARTING BUZZER TEST",COLOUR_BLACK,MEDIUM_FONT);
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	
+//	ui_timer_init();
+	Buzzer_Init();
+	Buzzer_On();
+	printf("\n Test 1: Buzzer Short Beep.");
+	Buzzer_Short_Beep(0);
+	_time_delay(2000);
+	printf("\n Test 2: Buzzer Long Beep.");
+	Buzzer_Long_Beep();
+	_time_delay(2000);
+	Buzzer_Off();
+//	ui_timer_de_init();
+	Draw_string_new(10,200,"BUZZER TEST SUCCESS",COLOUR_BLACK,MEDIUM_FONT);
+	printf("\n***********COMPLETED BUZZER TEST***********\n");
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	_time_delay(1000);
+}
+
 /*-----------------------------------------------------------------------------
  **************************  END   ***************************************
  -----------------------------------------------------------------------------*/

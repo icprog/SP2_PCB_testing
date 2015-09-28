@@ -80,7 +80,6 @@
 #include "calib.h"
 #include "algorithm.h"
 #include "common_headers.h"
-#include "calibration.h"
 
 typedef union
 {
@@ -88,46 +87,12 @@ typedef union
 	uint8_t Total_Test_Ctr_Buff[4];
 }TEST_COUNT_FLASH;
 
-typedef union
-{
-	float var_float;
-	char var_char_float[4];
-}FLOAT_TO_CHAR;
-
-typedef struct
-{
-	uint8_t Update_Status;
-	uint8_t CRC_Status;
-}IMAGE_PARA;
-extern IMAGE_PARA SP2_IMG,CALIB_IMG;
-
 extern TEST_COUNT_FLASH Test_Count_Flash;
-
-
-#if MQX_ROM_VECTORS
-#define FLASH_NAME 			"flashx:bank3"
-#else
-#define FLASH_NAME 			"flashx:bank0"
-#endif
-
-
-#define DFU_ADDR_LOC		0x24B70
-#define TEST_ID_ADDR_LOC	0x24B75
-#define IRDMS_ADDR_LOC		0x24B7A
-#define PRESS_ADDR_LOC		0x24B8F
-#define ROS_ADDR_LOC		0x24BA4
-#define ACC_ADDR_LOC		0x24BB9
-#define MAG_ADDR_LOC		0x24BCE
-#define CALIB_SECTOR		0x20000
-#define SERIAL_ADDR_LOC 	0x21000
-#define TID_BAT				0x22000
-#define ACC_CALIB_SECTOR	0x23000
-#define DFU_SECTOR			0x24000
-#define STRING_SECTOR		0x25000
 
 //#define TEST_LOW_POWER
 #define AUTOMATE_TEST 0
-#define ALGO_TEST 1
+#define ALGO_TEST 0
+#define FAILED_ALGO_TEST 1
 #define GPS_OFF_DURING_TEST 1
 #define FLASH_ADC_TEST 0
 #define DYNAMIC_UPDATE_TIME	1
@@ -148,24 +113,18 @@ extern TEST_COUNT_FLASH Test_Count_Flash;
 #define PWR_RAIL_EN_PIN_MUX		(LWGPIO_MUX_C9_GPIO)
 #define KILL_EN_PIN			(GPIO_PORT_A|GPIO_PIN14)
 #define KILL_EN_PIN_MUX		(LWGPIO_MUX_A14_GPIO)
-extern CalibTable IRDMS_Calib_Table[];
-extern CalibTable Pressure_Calib_Table[];
-extern CalibTable ROS_Calib_Table[];
+
 extern void Test_task (uint_32);
-extern MQX_FILE_PTR   flash_file;
 void Lsm_Task(uint_32);
 extern void UI_Task (uint_32);
 extern void power_rail_disable(void);
 extern void power_rail_enable(void);
 extern void power_rail_init(void);
-extern char Serial_Numbr[15];
 void flash_adc_loop_test();
 extern uint_16 img_date_word, img_time_word;
-extern uint_16 calib_date_word, calib_time_word;
 extern MFS_DATE_TIME_PARAM Image_File_Attr;
 extern unsigned char LCD_Updating_Flag,LSM_Updating_Flag;
 extern unsigned char Processing_Display;
 extern LWEVENT_STRUCT                  app_event,Lsm_Event;
-extern uint8_t Calib_Flash_Buf[120];
 void Time_Delay_Sleep(unsigned int delay_numbr);
 #endif /* COMMON_HEADERS_H_ */

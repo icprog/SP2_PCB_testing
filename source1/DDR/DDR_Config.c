@@ -1,6 +1,6 @@
 #include <mqx.h>
 #include <bsp.h>
-
+#include "common_headers.h"
 
 static void DDR_power_on(void);
 static void DDR_power_off(void);
@@ -188,4 +188,73 @@ void ddr_disable(void)
 //	DDR_power_off();
 }
 
+uint_8 Test_DDR(void)
+{
+	printf("\n******* STARTING DDR TEST*********\n");
+	
+	buff_clear();
+	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+	Create_Title("LPDDR TEST",strlen("LPDDR TEST"));
+	Draw_string_new(10,80,(uint_8*)"STARTING LPDDR TEST",COLOUR_BLACK,MEDIUM_FONT);
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	
+	uint_32 i=0;
+	uint_8 ctr=0;
+	volatile uint_8 *Force_buff = (uint_8 *)(0x70000000);
+	uint_8 error=0;
+	
+	ddr_init();
+	printf("\nDDR INITIALIZATION COMPLETED");
+	
+	printf("\nThe size of LPDDR is %u\n", sizeof(Algorithm_Data));
+	
+	printf("\nWriting values to LPDDR memory array.\n");
+	for(i=0;i<sizeof(Algorithm_Data);i++)
+	{
+		Force_buff[i]=ctr;
+		ctr++;
+//		printf("\nWritten %u to Address %u", i, &Force_buff[i]);
+	}
+	ctr=0;
+	printf("\n TEST 1: READING LPDDR immediately after writing to it..\n");	
+	for(i=0;i<sizeof(Algorithm_Data);i++)
+	{
+		if(Force_buff[i] != ctr)
+		{
+			printf("\nLPDDR read error at %u, Read value is %u, Actual Value is %u", &Force_buff[i], Force_buff[i], i);
+			error=1;
+		}
+		ctr++;
+	}
+	
+	printf("\n Test 2: READING LPDDR after a delay of 5 seconds; Memory Refresh Test.\n");
+	_time_delay(5000);
+	ctr=0;
+	for(i=0;i<sizeof(Algorithm_Data);i++)
+	{
+		if(Force_buff[i] != ctr)
+		{
+			printf("\nLPDDR delayed read error at %u, Read value is %u, Actual Value is %u", &Force_buff[i], Force_buff[i],i);
+			error=1;
+		}
+		ctr++;
+	}
+	
+	if(error)
+	{
+		printf("\nLPDDR MEMORY READ/WRITE ERROR!!!!!\n");
+		Draw_string_new(1,200,(uint_8*)"LPDDR TEST FAILED",COLOUR_BLACK,MEDIUM_FONT);
+	}
+	else
+	{
+		printf("\nLPDDR MEMORY READ/WRITE CHECK COMPLETED SUCCESSFULLY WITH NO ERRORS!!!!\n");
+		Draw_string_new(10,200,(uint_8*)"LPDDR TEST SUCCESS",COLOUR_BLACK,MEDIUM_FONT);
+	}
+	
+	ddr_disable();
+	printf("\n*********LPDDR TEST COMPLETE*********");
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	_time_delay(1000);
+	return error;
 
+}

@@ -31,9 +31,4 @@ extern const unsigned char bottomrectblack [];
 extern const unsigned char bottomrectwhite [];
 extern const unsigned char battery_empty_icon[];
 extern const unsigned char battery_full_icon[];
-extern const unsigned char compass_all_icon[];
-extern const unsigned char compass_roll_icon[];
-extern const unsigned char compass_spin_icon[];
-extern const unsigned char compass_flip_icon[];
-
 #endif /* UI_ICON_MANIPULATION_H_ */

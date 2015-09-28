@@ -80,6 +80,104 @@ uint_8 GetSensor_Output(float *pressure, float *depth, uint_16 *Qrd, uint_16 *ra
     return 0;
 }
 
+
+/*-----------------------------------------------------------------------------* 
+ * Function:    Get_ADC_Outputs
+ * Brief:       Read several sensor outputs
+ * Parameter:   pointers to hold pressure ,depth,qrd,raw pressure and raw depth
+ * Return:      status
+ -----------------------------------------------------------------------------*/
+uint_8 Get_ADC_Outputs( uint_16 *pressure,uint_16 *depth, uint_16 *ros_1, uint_16 *ros_2,
+					    uint_16 *Batt_volt,uint_16 *Batt_curr,uint_16 *Batt_temp )
+{
+    ADC_RESULT_STRUCT adc_out;
+    
+    *pressure = 0;
+    *depth = 0;
+    *ros_1 = 0;
+    *ros_2 = 0;
+    *Batt_volt = 0;
+    *Batt_curr = 0;
+    *Batt_temp = 0;
+    
+	ADC_Init();
+	Time_Delay_Sleep(750);
+	
+    adc_out.result = 0;
+    if (read(force_sens, &adc_out, sizeof(adc_out)))
+    {
+        *pressure = (uint_16)((float) adc_out.result * (float) RAW_DATA_TO_VOLTAGE_MULTIPLIER * 1000);      
+    }
+    else{
+        return 1;
+    }
+    
+    adc_out.result = 0;
+    if (read(ir_sens, &adc_out, sizeof(adc_out)))
+    {
+        *depth = (uint_16)((float) adc_out.result * (float) RAW_DATA_TO_VOLTAGE_MULTIPLIER * 1000);        
+    }
+    else
+    {
+        return 1;
+    }
+    
+    adc_out.result = 0;
+    if (read(ros_sens1, &adc_out, sizeof(adc_out)))
+    {   
+        *ros_1 = (uint_16)((float) adc_out.result * (float) RAW_DATA_TO_VOLTAGE_MULTIPLIER * 1000);
+       
+    }
+    else
+    {
+        return 1;
+    }
+    
+    adc_out.result = 0;
+    if (read(ros_sens2, &adc_out, sizeof(adc_out)))
+    {    
+        *ros_2 = (uint_16)((float) adc_out.result * (float) RAW_DATA_TO_VOLTAGE_MULTIPLIER * 1000);     
+    }
+    else
+    {
+        return 1;
+    }
+    ADC_deinit();
+    Battery_ADC_Init();
+    Time_Delay_Sleep(750);
+    adc_out.result = 0;
+    if (read(batt_sens, &adc_out, sizeof(adc_out)))
+    {
+        *Batt_volt = (uint_16)((float) adc_out.result * (float) BATTERY_VOLTAGE_MULTIPILER * 1000);
+       
+    }
+    else
+    {
+        return 1;
+    }
+    
+    adc_out.result = 0;
+    if (read(batt_current, &adc_out, sizeof(adc_out)))
+    {       
+        *Batt_curr = (uint_16)((float) adc_out.result * (float) BATTERY_VOLTAGE_MULTIPILER * 1000);     
+    }
+    else
+    {
+        return 1;
+    }
+    
+    adc_out.result = 0;   
+    if (read(batt_temp, &adc_out, sizeof(adc_out)))
+    {       
+        *Batt_temp = (uint_16)((float) adc_out.result * (float) BATTERY_VOLTAGE_MULTIPILER * 1000);     
+    }
+    else
+    {
+        return 1;
+    }
+    Battery_ADC_Deinit();
+    return 0;
+}
 /*-----------------------------------------------------------------------------
  **************************  END   ***************************************
  -----------------------------------------------------------------------------*/

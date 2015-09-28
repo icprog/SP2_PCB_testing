@@ -61,6 +61,7 @@ void start_data_acquision(void)
 {
     SD_Write_Cnt = 0;
     Test_Complete_flag = 0;
+    lsm_data_count = 0;
     Get_timestamp_from_rtc();
     ticks = 0;
     clear_lsm_data_buffer();
@@ -78,7 +79,7 @@ void start_data_acquision(void)
     
     Start_Hw_Timer_1();
     
-//    lwgpio_int_enable(&Lsm303_TMP_pin, TRUE );
+    lwgpio_int_enable(&Lsm303_TMP_pin, TRUE );
 }
 
 /*-----------------------------------------------------------------------------* 

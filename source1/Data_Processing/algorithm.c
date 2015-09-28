@@ -2579,6 +2579,7 @@ uint8_t Process_Data(void)
 	printf("\n Finding_End_Of_The_Test @ ");
 	print_rtc_time_date();
 #endif
+#if FAILED_ALGO_TEST
 	Calculate_Failed_Test_Investigation_Parameters();
 #if ENABLE_PRINTF_FUNCTION_EXECUTION_TIME_ANALYSIS
 	printf("\n Calculate_Failed_Test_Investigation_Parameters @ ");
@@ -2601,7 +2602,7 @@ uint8_t Process_Data(void)
 		return TOO_FAST_ERROR_CONDITION;
 
 	}
-	
+#endif
 	/*********************************************************/ 
 	
 	full_resolution_creation_force();

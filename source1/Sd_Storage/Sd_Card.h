@@ -211,9 +211,7 @@ extern uint_16 Sd_card_file_count;
 extern void Create_ble_manifest_after_startup_and_delete(void);
 extern void Sort_Sd_Card_Folder_List_in_Descending_Order(void);
 extern uint_32 date_time_to_seconds(DATE_STRUCT_PTR);
-extern void Uninstall_FS_for_MSD(void);
-extern void Read_mag_calib_data_from_file();
-extern void Write_SDcard_DFU();
+
 
 #endif /* SD_CARD_H_ */
 

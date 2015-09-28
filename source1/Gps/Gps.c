@@ -98,7 +98,7 @@ char GPSVERMsgFlag = OLD_GPS_MSG;
 
 
 UART_MemMapPtr sci_ptr;
-
+uint_8 GPS_test_flag = 0;
 
 /*UART0  configuration*/
 #define RS232CHANNEL "ittya:"	//GPS at UART0
@@ -160,7 +160,7 @@ void gps_gpio_init(void)
 	lwgpio_init(&GPS_PPS , BSP_FIX_AVL, LWGPIO_DIR_INPUT, 	 LWGPIO_VALUE_NOCHANGE); 
 
 	lwgpio_set_functionality(&GPS_PPS, BSP_GPIO_MUX_GPIO); 
-#if 0
+#if 1
 	GPS_Input_Pin_Init();
 #else
 	/*GPS fix avl as i/p*/
@@ -240,6 +240,7 @@ void uart0_rx_tx_isr(pointer )
 	//
 	// Enter State Machine
 	//	  
+	GPS_test_flag =1;
 	switch (gpsSMState) 
 	{
 
@@ -614,73 +615,6 @@ uint_8 GPS_uart_init(void)
 	//	uart0_serial_io_bsp_init(IO_PERIPHERAL_PIN_MUX_ENABLE);
 }
 
-void Test_Gps(void)
-{
-	uint_16 gps_lock_time=0;
-	uint_8  Time[20]={0};
-
-	printf("Initialising GPS ...\n");	
-	halCC4000Init();                           	/*Initialising GPS*/     
-	printf("GPS initialisation Completed...\n");
-#ifndef TEST_LOW_POWER
-	Button_Press_Status = BUTTON_PRESS_NOT_PENDING; 
-
-	printf("Press Left button to start GPS locking...\n");
-
-	while(1)
-	{
-		if(Button_Press_Status==LEFT_BUTTON_PRESSED)
-		{
-			printf("Started Locking GPS....\n");
-			break;
-		}
-	}
-	Button_Press_Status = BUTTON_PRESS_NOT_PENDING; 
-#endif
-
-	gps_power_on();
-	gps_enable();
-	gpsCC4000On(1);
-#ifndef TEST_LOW_POWER
-	Update_rtc("00000000","000000");   
-
-	printf("Press Right button to Cancel GPS locking...\n");
-
-	while(1)
-	{
-		if(gps_data_read()== 0)
-		{
-
-			printf("DATE: %s\n",Data_header.Time_stamp.Date);
-
-			printf("TIME: %s\n",Data_header.Time_stamp.Time);
-
-			printf("LATI: %s\n",Data_header.Gps_data.Latitude);
-
-			printf("LONG: %s\n",Data_header.Gps_data.Longitude);
-
-			gps_lock_time = Get_lock_time();
-			sprintf((char *)Time,"%05dsec", gps_lock_time );
-			printf("LOCK TIME: %s\n",Time);
-			gpsCC4000Off();
-			gps_disable();
-			break;
-		}
-		if(Button_Press_Status==RIGHT_BUTTON_PRESSED)
-		{
-			printf("Cancelled GPS Locking....\n");
-			gpsCC4000Off();
-			gps_disable();
-			break;
-		}
-	}
-
-#else
-	gpsCC4000Off();
-	gps_disable();
-#endif
-
-}
 
 void Test_Gps_sensor_output(void)
 {
@@ -798,7 +732,56 @@ static void GPS_int_service_routine(void *)
 			GPS_Lock_timer_start(5000);	// 5 sec
 			GPS_Current_State = GPS_LOCKING;
 		}
+		GPS_test_flag =1;
 	}
 	lwgpio_int_clear_flag(&FIX_AVL);
 }
 
+void Test_Gps(void)
+{
+    printf("\n\n\n***********STARTING GPS TEST*************\n");
+	buff_clear();
+	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+	Create_Title("GPS TEST",strlen("GPS TEST"));
+	Draw_string_new(15,80, (uint_8 *)"STARTING GPS TEST",COLOUR_BLACK,MEDIUM_FONT);
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	_time_delay(1000);
+	
+	
+	uint_16 gps_lock_time=0;
+	uint_8  Time[20]={0};
+
+//	printf("\nInitialising GPS ...");	
+//	halCC4000Init();                           	/*Initialising GPS*/     
+//	printf("\nGPS initialisation Completed...");
+
+//	gps_power_on();
+//	gps_enable();
+//	gpsCC4000On(1);
+
+//	Update_rtc("00000000","000000");   
+
+	uint_16 gps_time_out =500;
+
+	while(!GPS_test_flag && --gps_time_out)
+	{		
+		_time_delay(10);
+	}	
+	
+	if(!gps_time_out)
+	{
+		printf("GPS TEST FAILED\n");
+		Draw_string_new(25,200, (uint_8 *)"GPS TEST FAILED",COLOUR_BLACK,MEDIUM_FONT);
+	}
+	else
+	{
+		printf("\nGPS TEST SUCCESS\n");
+		Draw_string_new(25,200, (uint_8 *)"GPS TEST SUCCESS",COLOUR_BLACK,MEDIUM_FONT);
+	}
+	printf("\n************GPS TEST COMPLETED*************\n");
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	_time_delay(1000);
+	
+//	gpsCC4000Off();
+//	gps_disable();	
+}

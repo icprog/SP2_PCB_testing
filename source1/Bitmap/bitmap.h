@@ -37,7 +37,6 @@ extern const unsigned char Processing_Image4 [];
 extern const unsigned char Mass_Storage_Conn [];
 extern const unsigned char Battery_low_1 [];
 extern const unsigned char Battery_low_2 [];
-extern const unsigned char Calibration_SENSOR_ERROR [];
 #define FRAME_BUFFER_BYTE_ARRAY_SIZE (12000)
 
 #endif

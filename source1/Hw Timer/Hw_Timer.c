@@ -175,7 +175,7 @@ void hwtimer1_callback(pointer )
 	}
 	
 	/*  Read QRD sensor data*/
-	if (read(optical_sens, &adc_out,sizeof(adc_out)))
+	if (read(ros_sens1, &adc_out,sizeof(adc_out)))
 	{
 		AlgorithmData->qrdBuff[Acq_Data_Count]=(uint_16)adc_out.result;
 	}

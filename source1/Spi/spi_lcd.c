@@ -17,7 +17,9 @@
 #include <spi.h>
 #include "spi_lcd.h"
 #include "spi_config.h"
-#include "common_headers.h"
+#include "UI_Timer.h"
+#include "UI_Display.h"
+#include "bitmap.h"
 
 #define LCD_CLR 		0x20
 #define LCD_CMD 		0x80
@@ -33,6 +35,10 @@ MQX_FILE_PTR spifd;
 LWGPIO_STRUCT lcd_cs;
 LWGPIO_STRUCT REG_SHDN;
 LWGPIO_STRUCT DISP_ON;
+static LWGPIO_STRUCT 	LCD_BL;
+static void lcd_display_backlight_pin_off(void);
+static void lcd_display_backlight_pin_on(void);
+static void lcd_display_backlight_pin_init(void);
 
 
 /*-----------------------------------------------------------------------------
@@ -223,7 +229,7 @@ _mqx_int Refresh_Lcd_Buffer(uint_8 * buff)  //pointer user_data,MQX_FILE_PTR spi
     _mqx_int result = 0,index = 0,loop;
     uint_8 line_num = 1;
     
-    ui_Hwtimer_stop();   
+    ui_Hwtimer_stop();
     Stop_PDB_Timer();
     
     /* LCD write Command */ 
@@ -259,7 +265,7 @@ _mqx_int Refresh_Lcd_Buffer(uint_8 * buff)  //pointer user_data,MQX_FILE_PTR spi
     if (result != index)
     {
         printf("writing error..!");
-    }   
+    }  
     
     ui_Hwtimer_start();
     Start_PDB_Timer();
@@ -736,3 +742,109 @@ void Set_lcd_buad_rate(uint_32 buad_rate)
 	    }
 
 }
+/*-----------------------------------------------------------------------------
+ *  Function:     lcd_display_backlight_pin_init
+ *  Brief:        This function initialise LCD backlight pin
+ *  Parameter:    None
+ *  Return:       None
+ -----------------------------------------------------------------------------*/
+static void lcd_display_backlight_pin_init(void)
+{
+    if (!lwgpio_init(&LCD_BL, BSP_BLEN_LCD, LWGPIO_DIR_OUTPUT, LWGPIO_VALUE_HIGH))
+    {
+        printf("Initializing GPIO with associated pins failed.\n");
+        
+    }
+    lwgpio_set_functionality(&LCD_BL, BSP_BLEN_LCD_MUX); /*BSP_SPI_MUX_GPIO need define in BSP for function mux as GPIO*/
+    lwgpio_set_value(&LCD_BL, LWGPIO_VALUE_HIGH);
+}
+
+
+/*-----------------------------------------------------------------------------
+ *  Function:     lcd_display_backlight_pin_on
+ *  Brief:        This function Turns on LCD backlight
+ *  Parameter:    None
+ *  Return:       None
+ -----------------------------------------------------------------------------*/
+static void lcd_display_backlight_pin_on(void)
+{
+    
+    lwgpio_set_value(&LCD_BL, LWGPIO_VALUE_HIGH);
+    
+}
+
+
+/*-----------------------------------------------------------------------------
+ *  Function:     lcd_display_backlight_pin_off
+ *  Brief:        This function Turns off LCD backlight
+ *  Parameter:    None
+ *  Return:       None
+ -----------------------------------------------------------------------------*/
+static void lcd_display_backlight_pin_off(void)
+{
+    
+    lwgpio_set_value(&LCD_BL, LWGPIO_VALUE_LOW);
+    
+}
+
+/*-----------------------------------------------------------------------------
+ *  Function:     Test_backlight
+ *  Brief:        This function Turns off LCD backlight
+ *  Parameter:    None
+ *  Return:       None
+ -----------------------------------------------------------------------------*/
+void Test_backlight(void)
+{
+	printf("\n Testing LCD Back light...\n");
+	
+	buff_clear();
+	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+	Create_Title("BACKLIGHT TEST",strlen("BACKLIGHT TEST"));
+	Draw_string_new(10,150,(uint_8*)"BACKLIGHT IS : ON",COLOUR_BLACK,MEDIUM_FONT);
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	lcd_display_backlight_pin_init();	
+	_time_delay(1000);
+	
+	buff_clear();
+	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+	Create_Title("BACKLIGHT TEST",strlen("BACKLIGHT TEST"));
+	Draw_string_new(10,150,(uint_8*)"BACKLIGHT IS : OFF",COLOUR_BLACK,MEDIUM_FONT);
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	lcd_display_backlight_pin_off();
+	_time_delay(1000);
+	
+	buff_clear();
+	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+	Create_Title("BACKLIGHT TEST",strlen("BACKLIGHT TEST"));
+	Draw_string_new(10,150,(uint_8*)"BACKLIGHT IS : ON",COLOUR_BLACK,MEDIUM_FONT);
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	lcd_display_backlight_pin_on();
+	_time_delay(1000);
+	
+	buff_clear();
+	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+	Create_Title("BACKLIGHT TEST",strlen("BACKLIGHT TEST"));
+	Draw_string_new(10,150,(uint_8*)"BACKLIGHT IS : OFF",COLOUR_BLACK,MEDIUM_FONT);
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	lcd_display_backlight_pin_off();
+	_time_delay(1000);
+	
+	buff_clear();
+	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+	Create_Title("BACKLIGHT TEST",strlen("BACKLIGHT TEST"));
+	Draw_string_new(10,150,(uint_8*)"BACKLIGHT IS : ON",COLOUR_BLACK,MEDIUM_FONT);
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	lcd_display_backlight_pin_on();
+	_time_delay(1000);
+	
+	buff_clear();
+	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+	Create_Title("BACKLIGHT TEST",strlen("BACKLIGHT TEST"));
+	Draw_string_new(10,150,(uint_8*)"BACKLIGHT IS : OFF",COLOUR_BLACK,MEDIUM_FONT);
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+	lcd_display_backlight_pin_off();
+	_time_delay(1000);
+	printf("\n LCD Back light Completed\n");
+	
+}
+

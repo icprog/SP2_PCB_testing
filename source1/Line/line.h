@@ -19,7 +19,6 @@ extern void Draw_Rect(uint_16 X1, uint_16 Y1, uint_16 X2, uint_16 Y2, uint_8 pix
 extern void Rect_Fill(uint_8 X1, uint_16 Y1, uint_8 X2, uint_16 Y2, uint_8 pixel);
 extern void Draw_Line(uint_16 X1, uint_16 Y1, uint_16 X2, uint_16 Y2, uint_8 pixel);
 extern void Draw_Dithered_Line(uint_16 X1, uint_16 Y1, uint_16 X2, uint_16 Y2, uint_8 pixel);
-extern void Draw_Rect_Box(uint_16 X1, uint_16 Y1, uint_16 X2, uint_16 Y2, uint_8 pixel);
 void Rect_fill_with_dithered_lines(uint_8 X1, uint_16 Y1, uint_8 X2, uint_16 Y2, uint_8 pixel);
 
 #endif /* LINE_H_ */

@@ -106,11 +106,6 @@
 #define BOTTOM_RECT_BLACK						21
 #define BATTERY_FULL_ICON       				22
 #define BATTERY_EMPTY_ICON       				23
-#define COMPASS_ALL_ICON_NUM					24
-#define COMPASS_ROLL_ICON_NUM					25
-#define COMPASS_SPIN_ICON_NUM					26
-#define COMPASS_FLIP_ICON_NUM					27
-
 #define NUM_X_PIXEL_BATTERY_ICON				30
 #define NUM_X_PIXEL_BLUETOOTH_ICON				16
 #define NUM_X_PIXEL_GPS_ICON				 	16
@@ -130,10 +125,7 @@
 //#define NUM_X_BOTTOM_RECT						59
 #define NUM_X_TOP_RECT							36
 #define NUM_X_BOTTOM_RECT						36
-#define NUM_X_COMPASS_ALL_ICON					1800
-#define NUM_X_COMPASS_ROLL_ICON					2312
-#define NUM_X_COMPASS_SPIN_ICON					1280
-#define NUM_X_COMPASS_FLIP_ICON					1280
+
 
 #define NUM_Y_PIXEL_FAV_ICON					16					
 #define NUM_Y_PIXEL_LOCATION_ICON				24
@@ -150,10 +142,6 @@
 //#define NUM_Y_BOTTOM_RECT						32
 #define NUM_Y_TOP_RECT							32
 #define NUM_Y_BOTTOM_RECT						32
-#define NUM_Y_COMPASS_ALL_ICON					200	
-#define NUM_Y_COMPASS_ROLL_ICON					136
-#define NUM_Y_COMPASS_SPIN_ICON					80
-#define NUM_Y_COMPASS_FLIP_ICON					128
 
 #define LOADING_IMAGE_NO_BLACK				 	 0
 #define LOADING_IMAGE_ONE_BLACK				 	 1
@@ -194,12 +182,6 @@
 #define MAX_NO_OF_FILES_IN_DIR					 (64)
 #define MAX_NO_OF_DIR							 (64)
 
-#define CAL_REFRESH_TIME						 (1000)
-#define GPS_REFRESH_TIME						 (250)
-
-#define ACC_REFRESH_TIME						 (5000)
-#define ACC_BUZZER_BEEP_TIME					 (1000)
-
 typedef void (*menuFunction)(void);
 // Entry for a monitor command table
 
@@ -211,15 +193,6 @@ typedef struct
     uint_8 UI_state;	//State which enter after selecting menu item
     
 } MenuTableEntry;
-
-typedef struct
-{
-    char  Calib_condition[32];		// Calib_condition text
-    float min_voltage;				// min voltage range for calibration
-    float max_voltage;				// max voltage range for calibration
-    float curr_voltage;
-    char  Calib_status;
-} CalibTable;
 
 typedef struct FavouriteTable
 {
@@ -316,8 +289,7 @@ extern char Snow_Profile_File_Name[][16];
 
 //This variable is incremented and decremented according to left or right key in the settings menu 
 extern volatile uint_8 Config_settings_selection;
-extern uint_8 compass_calibration_screen;
-extern uint_8 accelerometer_calibration_screen;
+
 extern volatile uint_8 bluetooth_status;
 extern volatile uint_8 multiple_tests_status;
 extern volatile uint_8 test_number;
@@ -332,22 +304,6 @@ extern volatile uint_8 Snow_Profiles_File_List_count;
 
 extern uint_8 Battery_adc_stucked_and_shows_zero;
 extern char BUSY;
-extern uint_8 Calib_status[]; 
-
-extern CalibTable Pressure_Calib_Table[];
-extern CalibTable ROS1_Calib_Table[];
-extern CalibTable ROS2_Calib_Table[];
-extern CalibTable IRDMS_Calib_Table[];
-extern CalibTable Accelerometer_Calib_Table[];
-extern CalibTable Magnetometer_Calib_Table[];
-
-extern volatile uint_8 IRDMS_Condition_selection;
-extern volatile uint_8 Pressure_Condition_selection;
-extern volatile uint_8 ROS_Condition_selection;
-extern volatile uint_8 ROS_Condition_selection;
-extern volatile uint_8 Accelerometer_Condition_selection;
-extern volatile uint_8 Magnetometer_Condition_selection;
-extern volatile uint_8 Acc_reading_status;
 
 void display_Snow_Profiles_File_List(void);
 void display_favourites_menu(void);
@@ -392,6 +348,7 @@ void display_Snow_Profiles_List(void);
 void display_Testmenu(void);
 void display_MultipleTestMenu(void);
 void display_Mainmenu(void);
+void display_ADC_Output(void);
 void create_Location_informations(void);
 void Create_Header(void);
 float battery_Voltage_Check(void);
@@ -424,21 +381,13 @@ void Change_Defualt_Gragh_View(void);
 extern void Create_Snow_Profiles_File_List_Content(void);
 extern uint_8 tempCount;
 extern unsigned char Test_disp_ctr;
-extern void Add_Item_To_Menu(const char *menu_Text, uint_8 menu_position,uint_16 menu_selection_status);
+extern void Add_Item_To_Menu(const char *menu_Text, uint_8 menu_position,
+		uint_16 menu_selection_status);
 extern void Update_Fav_List_File_Index_After_File_Deletion(void);
 
 void display_bluetooth_toggle(void);
 void display_gps_toggle(void);
 void display_multiple_tests_toggle(void);
-
-extern void IRDMS_Condition_Key_up(void);
-extern void IRDMS_Condition_Key_down(void);
-extern void Pressure_Condition_Key_up(void);
-extern void Pressure_Condition_Key_down(void);
-extern void ROS_Condition_Key_up(void);
-extern void ROS_Condition_Key_down(void);
-extern void Accelerometer_Condition_Key_up(void);
-extern void Accelerometer_Condition_Key_down(void);
 
 
 #endif /* UI_DISPLAY_H_ */
