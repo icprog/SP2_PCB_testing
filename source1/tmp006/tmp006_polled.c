@@ -1089,7 +1089,9 @@ void Tmp006_Read(char test_time)
     TMP006_enable_powerdown_mode();
     get_object_temperature(test_time);
 }
-
+/*
+ * it seems like there are some uncessary delays in theis function
+ */
 void Test_Tmp006(void)
 {
 	printf("\n********STARTING TMP006 TEST**********\n");

@@ -2251,8 +2251,6 @@ static void Create_Sensor_Output_Content(void)
 
 	sprintf(tempString, "%d ", (raw_pressure ));
 	x_position = (DISPLAY_X_MAX -12) - (strlen(tempString)* NUM_X_PIXEL_PER_CHAR);
-
-
 	Draw_string_new(x_position, (y_position), (uint_8 *) tempString, COLOUR_BLACK, MEDIUM_FONT);
 
 	x_position =12;

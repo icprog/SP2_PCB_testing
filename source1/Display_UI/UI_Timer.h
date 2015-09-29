@@ -47,8 +47,8 @@ extern unsigned char Processing_Display;
 #define TEST_RESULT_PASSED 1
 #define TEST_RESULT_FAILED 2
 void Processing_Display_timer_start(uint_32 time);
-void Test_Gps(void);
-void Test_Sd_card(void);
+uint8_t Test_Gps(void);
+uint8_t Test_Sd_card(void);
 void gps_power_off(void);
 void ui_Hwtimer_start(void);
 void ui_Hwtimer_stop(void);

@@ -41,8 +41,8 @@
 
 char 	 BUSY=FALSE,Read_LSM=0;
 LWGPIO_STRUCT PWR_5V_RAIL,KILL_CONTROL;
-void Test_gpio_buttons(void);
-
+uint8_t Test_gpio_buttons(void);
+void display_test_results(uint8_t button_error_code, uint8_t ddr_error_code, uint8_t sd_error_code, uint8_t lsm_error_code, uint8_t ble_error_code, uint8_t gps_error_code);
 LWEVENT_STRUCT                  app_event,Lsm_Event;
 
 const TASK_TEMPLATE_STRUCT  MQX_template_list[] =
@@ -201,10 +201,11 @@ void Perform_Startup_Test(void)
 	Kill_ON_Controller();
 	OSC_EN_init();
 	ui_timer_init();
-	Test_gpio_buttons();
+	//start the actual tests
+	uint8_t button_error_code = Test_gpio_buttons(); 
 	Test_backlight();
-	Test_DDR();	//Perform LPDDR Test
-	Test_Sd_card();
+	uint8_t ddr_error_code = Test_DDR();	//Perform LPDDR Test
+	uint8_t sd_error_code = Test_Sd_card(); 
 	Test_ADC();
 	
 	Battery_ADC_Init();
@@ -212,16 +213,128 @@ void Perform_Startup_Test(void)
 	Battery_ADC_Deinit();
 	
 	Test_Buzzer();
-	Test_lsm303();
+	uint8_t lsm_error_code = Test_lsm303();
 	Test_Tmp006();
-	Test_BLE();	
-	Test_Gps();
+	uint8_t ble_error_code = Test_BLE();	
+	uint8_t gps_error_code = Test_Gps();
 	ui_timer_de_init();
 	power_rail_disable();
+	display_test_results(button_error_code, ddr_error_code, sd_error_code, lsm_error_code, ble_error_code, gps_error_code);
+	while(1){}
 }
 
-void Test_gpio_buttons(void)
+void display_test_results(uint8_t button_error_code, uint8_t ddr_error_code, uint8_t sd_error_code, uint8_t lsm_error_code, uint8_t ble_error_code, uint8_t gps_error_code)
 {
+	uint16_t x_position, y_position;
+	char * result_string;
+	char pass[4] = "PASS";
+	char fail[4] = "FAIL";
+	//set up screen
+	buff_clear();
+	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+	Create_Title("RESULTS",strlen("RESULTS"));
+	_time_delay(1000);
+	
+	/*BUTTON TEST*/
+	x_position = 12;
+	y_position = 45;
+	Draw_string_new(x_position, y_position, (uint_8 *) "BUTTON TEST:", COLOUR_BLACK, MEDIUM_FONT);	
+	
+	result_string = (button_error_code == 0) ? pass : fail;
+	x_position = (DISPLAY_X_MAX -12) - (strlen(result_string)* NUM_X_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, (y_position), (uint_8 *) result_string, COLOUR_BLACK, MEDIUM_FONT);
+	
+	/*BACKLIGHT TEST -- pass if it didnt crash*/
+	x_position = 12;
+	y_position = y_position +(2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) "BACKLIGHT TEST:", COLOUR_BLACK, MEDIUM_FONT);	
+	
+	uint8_t backlight_error_code = 0;
+	result_string = (backlight_error_code == 0) ? pass : fail;
+	x_position = (DISPLAY_X_MAX -12) - (strlen(result_string)* NUM_X_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, (y_position), (uint_8 *) result_string, COLOUR_BLACK, MEDIUM_FONT);
+	
+	/*DDR TEST*/
+	x_position = 12;
+	y_position = y_position +(2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) "DDR TEST:", COLOUR_BLACK, MEDIUM_FONT);	
+	
+	result_string = (ddr_error_code == 0) ? pass : fail;
+	x_position = (DISPLAY_X_MAX -12) - (strlen(result_string)* NUM_X_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, (y_position), (uint_8 *) result_string, COLOUR_BLACK, MEDIUM_FONT);
+	
+	/*SD CARD TEST*/
+	x_position = 12;
+	y_position = y_position +(2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) "SD TEST:", COLOUR_BLACK, MEDIUM_FONT);	
+	
+	result_string = (sd_error_code == 0) ? pass : fail;
+	x_position = (DISPLAY_X_MAX -12) - (strlen(result_string)* NUM_X_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, (y_position), (uint_8 *) result_string, COLOUR_BLACK, MEDIUM_FONT);
+	
+	/*ADC TEST -- pass if it didnt crash*/
+	x_position = 12;
+	y_position = y_position +(2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) "ADC TEST:", COLOUR_BLACK, MEDIUM_FONT);	
+	
+	uint8_t adc_error_code = 0;
+	result_string = (adc_error_code == 0) ? pass : fail;
+	x_position = (DISPLAY_X_MAX -12) - (strlen(result_string)* NUM_X_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, (y_position), (uint_8 *) result_string, COLOUR_BLACK, MEDIUM_FONT);
+	
+	/*BUZZER TEST -- pass if it didnt crash*/
+	x_position = 12;
+	y_position = y_position +(2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) "BUZZER TEST:", COLOUR_BLACK, MEDIUM_FONT);	
+	
+	uint8_t buzzer_error_code = 0;
+	result_string = (buzzer_error_code == 0) ? pass : fail;
+	x_position = (DISPLAY_X_MAX -12) - (strlen(result_string)* NUM_X_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, (y_position), (uint_8 *) result_string, COLOUR_BLACK, MEDIUM_FONT);
+	
+	/*ACCELEROMETER TEST*/
+	x_position = 12;
+	y_position = y_position  +(2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) "LSM TEST:", COLOUR_BLACK, MEDIUM_FONT);	
+	
+	result_string = (lsm_error_code == 0) ? pass : fail;
+	x_position = (DISPLAY_X_MAX -12) - (strlen(result_string)* NUM_X_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, (y_position), (uint_8 *) result_string, COLOUR_BLACK, MEDIUM_FONT);
+	
+	/*TEMP TEST  -- pass if it didn't crash*/
+	x_position = 12;
+	y_position = y_position +(2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) "TEMP TEST:", COLOUR_BLACK, MEDIUM_FONT);	
+	
+	uint8_t temp_error_code = -0;
+	result_string = (temp_error_code == 0) ? pass : fail;
+	x_position = (DISPLAY_X_MAX -12) - (strlen(result_string)* NUM_X_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, (y_position), (uint_8 *) result_string, COLOUR_BLACK, MEDIUM_FONT);
+	
+	/*BLE TEST*/
+	x_position = 12;
+	y_position = y_position +(2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) "BLE TEST:", COLOUR_BLACK, MEDIUM_FONT);	
+	
+	result_string = (ble_error_code == 0) ? pass : fail;
+	x_position = (DISPLAY_X_MAX -12) - (strlen(result_string)* NUM_X_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, (y_position), (uint_8 *) result_string, COLOUR_BLACK, MEDIUM_FONT);
+	
+	/*GPS TEST*/
+	x_position = 12;
+	y_position = y_position +(2 * NUM_Y_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, y_position, (uint_8 *) "GPS TEST:", COLOUR_BLACK, MEDIUM_FONT);	
+	
+	result_string = (gps_error_code == 0) ? pass : fail;
+	x_position = (DISPLAY_X_MAX -12) - (strlen(result_string)* NUM_X_PIXEL_PER_CHAR);
+	Draw_string_new(x_position, (y_position), (uint_8 *) result_string, COLOUR_BLACK, MEDIUM_FONT);
+	
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
+}
+
+uint8_t Test_gpio_buttons(void)
+{
+	uint8_t error_code = 0;
 	uint_8 lb_status = 0,rb_status = 0,ub_status = 0,db_status = 0,tb_status = 0;
 	buff_clear();
 //	Draw_string_new(60,10,(uint_8*)"BUTTON TEST",COLOUR_BLACK,MEDIUM_FONT);
@@ -361,11 +474,15 @@ void Test_gpio_buttons(void)
 		Draw_string_new(10,290,(uint_8*)"TEST BUTTON: FAILED",COLOUR_BLACK,MEDIUM_FONT);
 		printf("\n TEST BUTTON: FAILED \n");
 	}
+	if(lb_status==0 || rb_status==0 || ub_status==0 || db_status==0 || tb_status==0)
+	{
+		error_code = 1;
+	}
 	
 	ui_timer_stop();
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
 	printf("\n\n********GPIO BUTTON TEST COMPLETE*********\n\n");
 	_time_delay(2000);
-	return;
+	return error_code;
 }
 

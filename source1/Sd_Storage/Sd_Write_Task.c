@@ -1743,8 +1743,9 @@ void format_sd_card(void)
 }
 
 long lSize = 0;
-void Test_Sd_card(void)
+uint8_t Test_Sd_card(void)
 {
+	uint8_t error_code = 0;
 	buff_clear();
 	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
 	Create_Title("SDCARD TEST",strlen("SDCARD TEST"));
@@ -1779,6 +1780,7 @@ void Test_Sd_card(void)
 		{ 
 			printf ("File error while opening file in write mode...!\n");
 			printf("Writing a file to SD CARD Failed.\n");
+			error_code = 1;
 			break;
 		}
 		else
@@ -1787,6 +1789,7 @@ void Test_Sd_card(void)
 			{
 				printf ("ERROR while writing data to file\n");
 				printf("Writing a file to SD CARD Failed.\n");
+				error_code = 1;
 
 			}
 			else
@@ -1806,6 +1809,7 @@ void Test_Sd_card(void)
 		{ 
 			printf ("File error while opening file in read mode...!\n");
 			printf("Reading a file from SD CARD Failed.\n");
+			error_code = 1;
 			break;
 		}
 		else
@@ -1827,6 +1831,7 @@ void Test_Sd_card(void)
 				printf ("Reading error.Length mismatch in the file..!\n");
 				ui_timer_stop();
 				printf("Reading a file from SD CARD Failed.\n");
+				error_code = 1;
 			}
 			fclose (fd_ptr); 
 
@@ -1843,6 +1848,7 @@ void Test_Sd_card(void)
 				printf("Reading a file from SD CARD Failed.\n");
 				Draw_string_new(15,200, (uint_8 *)"SD TEST FAILED",COLOUR_BLACK,MEDIUM_FONT);
 				ui_timer_stop();
+				error_code = 1;
 				break; 
 			}
 		}
@@ -1852,11 +1858,12 @@ void Test_Sd_card(void)
 		{
 			printf("Testing SD CARD failed. Not completed within 30 second. \n");
 			Draw_string_new(15,200, (uint_8 *)"SD TEST FAILED",COLOUR_BLACK,MEDIUM_FONT);
+			error_code = 1;
 			break;
 		}		
 	}
 	printf("\n\n*********SD CARD TEST COMPLETED********\n\n");
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
 	_time_delay(1000);
-	return;
+	return error_code;
 }

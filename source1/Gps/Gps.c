@@ -737,9 +737,10 @@ static void GPS_int_service_routine(void *)
 	lwgpio_int_clear_flag(&FIX_AVL);
 }
 
-void Test_Gps(void)
+uint8_t Test_Gps(void)
 {
     printf("\n\n\n***********STARTING GPS TEST*************\n");
+    uint8_t error_code = 0;
 	buff_clear();
 	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
 	Create_Title("GPS TEST",strlen("GPS TEST"));
@@ -772,6 +773,7 @@ void Test_Gps(void)
 	{
 		printf("GPS TEST FAILED\n");
 		Draw_string_new(25,200, (uint_8 *)"GPS TEST FAILED",COLOUR_BLACK,MEDIUM_FONT);
+		error_code =1;
 	}
 	else
 	{
@@ -781,6 +783,7 @@ void Test_Gps(void)
 	printf("\n************GPS TEST COMPLETED*************\n");
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
 	_time_delay(1000);
+	return error_code;
 	
 //	gpsCC4000Off();
 //	gps_disable();	

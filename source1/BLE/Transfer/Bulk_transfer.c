@@ -696,9 +696,10 @@ void Disable_BLE(void)
  	}
  	
  }
- void Test_BLE()
+ uint8_t Test_BLE()
  {
-     printf("\n***********STARTING BLE TEST*************\n");
+    printf("\n***********STARTING BLE TEST*************\n");
+    uint8_t error_code = 0;
  	buff_clear();
 	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
 	Create_Title("BLE TEST",strlen("BLE TEST"));
@@ -717,6 +718,7 @@ void Disable_BLE(void)
  		{
  			printf("BLE TESTING FAIL...\n");
  			Draw_string_new(25,200, (uint_8 *)"BLE TEST FAILED",COLOUR_BLACK,MEDIUM_FONT);
+ 			error_code = 1;
 
  		}
  		
@@ -724,5 +726,6 @@ void Disable_BLE(void)
  	printf("\n************BLE TEST COMPLETED*************\n");
  	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
  	_time_delay(1000);
+ 	return error_code;
  }
 

@@ -819,8 +819,9 @@ void Get_Lsm_Data()
     }
     
 }
-void Test_lsm303(void )
-{       
+uint8_t Test_lsm303(void )
+{      
+	uint8_t error_code = 0;
 	printf("\n************STARTING LSM303 TEST****************\n");
 	buff_clear();
 	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
@@ -836,6 +837,7 @@ void Test_lsm303(void )
 	if (Lsm303_fd == NULL)
 	{
 		printf("ERROR Lsm303_fd == NULL!\n");
+		error_code = 1;
 	}
 	param = 100000;
 	ioctl(Lsm303_fd, IO_IOCTL_I2C_SET_BAUD, &param);
@@ -872,12 +874,14 @@ void Test_lsm303(void )
 	{
 		printf("\nLSM303 Test Fail\n");
 		Draw_string_new(10,200, (uint_8 *)"LSM TEST FAILED",COLOUR_BLACK,MEDIUM_FONT);
+		error_code = 1;
 	}
 
 	printf("\n\n*********LSM303 TEST COMPLETED********\n\n");
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
 	fclose(Lsm303_fd);
 	_time_delay(1000);
+	return error_code;
 }
 /*-----------------------------------------------------------------------------
  *************************        END        **********************************
