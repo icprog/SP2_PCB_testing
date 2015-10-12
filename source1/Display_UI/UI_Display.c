@@ -2332,8 +2332,10 @@ static void Create_ADC_Output_Content(void)
 	uint_16 raw_pressure = 0, raw_depth = 0,raw_ros1 = 0, raw_ros2 = 0,raw_Batt_volt = 0,
 			raw_Batt_curr = 0,raw_Batt_temp = 0;
 
-	Get_ADC_Outputs(&raw_pressure,&raw_depth,&raw_ros1,&raw_ros2,
+	uint8_t adc_result = Get_ADC_Outputs(&raw_pressure,&raw_depth,&raw_ros1,&raw_ros2,
 					&raw_Batt_volt,&raw_Batt_curr,&raw_Batt_temp);
+	
+	printf("ADC results = %d", adc_result);
 
 	x_position =12;
 	y_position = DISPLAY_CONTAINER_Y_MIN -(20)+ ((DISPLAY_CONTAINER_Y_MAX - DISPLAY_CONTAINER_Y_MIN)/8);

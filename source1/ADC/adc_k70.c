@@ -804,15 +804,33 @@ void Start_PDB_Timer(void)
 -----------------------------------------------------------------------------*/
 void Test_ADC(void)
 {
-	uint8_t i =0;
+	printf("\n***********STARTING ADC TEST***********\n");
+	uint8_t adc_result = 0;
+	uint_16 raw_pressure = 0, raw_depth = 0,raw_ros1 = 0, raw_ros2 = 0,raw_Batt_volt = 0,
+				raw_Batt_curr = 0,raw_Batt_temp = 0;
+	buff_clear();
+	Draw_Image_on_Buffer((uint_8 *) both_footer_background);
+	Create_Title("ADC TEST",strlen("ADC TEST"));
+	_time_delay(1000);
+	Draw_string_new(10,80,"STARTING ADC TEST",COLOUR_BLACK,MEDIUM_FONT);
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
 	power_rail_enable();
 	
-	State_of_Screen = UI_NEW_SNOW_PROFILE_COLLECTING;
-	for(i = 0; i < 30;i++)
+	for(int i = 0; i < 10;i++)
 	{
-		display_ADC_Output();				
+		adc_result += Get_ADC_Outputs(&raw_pressure,&raw_depth,&raw_ros1,&raw_ros2,
+						&raw_Batt_volt,&raw_Batt_curr,&raw_Batt_temp);	
 	}
-	State_of_Screen = UI_MAINMENU_LIST;
+	if(adc_result == 0)
+	{
+		Draw_string_new(10,200,"ADC TEST SUCCESS",COLOUR_BLACK,MEDIUM_FONT);
+	}
+	else
+	{
+		Draw_string_new(10,200,"ADC TEST FAILED",COLOUR_BLACK,MEDIUM_FONT);
+	}
+	printf("\n***********COMPLETED BUZZER TEST***********\n");
+	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
 	
 
 }

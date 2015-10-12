@@ -762,7 +762,7 @@ uint8_t Test_Gps(void)
 
 //	Update_rtc("00000000","000000");   
 
-	uint_16 gps_time_out =500;
+	uint_16 gps_time_out =1500;
 
 	while(!GPS_test_flag && --gps_time_out)
 	{		
@@ -771,10 +771,31 @@ uint8_t Test_Gps(void)
 	
 	if(!gps_time_out)
 	{
-		printf("GPS TEST FAILED\n");
-		Draw_string_new(25,200, (uint_8 *)"GPS TEST FAILED",COLOUR_BLACK,MEDIUM_FONT);
-		error_code =1;
+
+
+		printf("GPS FAILED: Let's reset the GPS and try again \n");
+		resetCC4000API();
+		/*GPIO for GPS*/
+		gps_gpio_init();
+
+		gps_regulator_init(); 
+		gps_power_on();
+		lwgpio_set_value(&GPS_RST, LWGPIO_VALUE_HIGH);
+		gpsCC4000OStartFixes(); 		
+		uint_16 gps_time_out =1500;
+
+		while(!GPS_test_flag && --gps_time_out)
+		{		
+			_time_delay(10);
+		}	
 	}
+	if(!gps_time_out)
+	{
+		error_code =1;
+		printf("\nGPS TEST FAILED\n");
+		Draw_string_new(25,200, (uint_8 *)"GPS TEST FAILED",COLOUR_BLACK,MEDIUM_FONT);
+	}
+
 	else
 	{
 		printf("\nGPS TEST SUCCESS\n");
