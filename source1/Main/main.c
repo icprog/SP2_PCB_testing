@@ -42,7 +42,7 @@
 char 	 BUSY=FALSE,Read_LSM=0;
 LWGPIO_STRUCT PWR_5V_RAIL,KILL_CONTROL;
 uint8_t Test_gpio_buttons(void);
-void display_test_results(uint8_t button_error_code, uint8_t ddr_error_code, uint8_t sd_error_code, uint8_t lsm_error_code, uint8_t ble_error_code);
+void display_test_results(uint8_t button_error_code, uint8_t ddr_error_code, uint8_t sd_error_code, uint8_t lsm_error_code, uint8_t ble_error_code, uint8_t temp_error_code);
 LWEVENT_STRUCT                  app_event,Lsm_Event;
 
 const TASK_TEMPLATE_STRUCT  MQX_template_list[] =
@@ -214,16 +214,17 @@ void Perform_Startup_Test(void)
 	
 	Test_Buzzer();
 	uint8_t lsm_error_code = Test_lsm303();
-	Test_Tmp006();
+	uint8_t temp_error_code = Test_Tmp006();
+	printf("temp_error_code = %d", temp_error_code);
 	uint8_t ble_error_code = Test_BLE();	
 	//uint8_t gps_error_code = Test_Gps(); //this test has an erro so its not displayed
 	ui_timer_de_init();
 	power_rail_disable();
-	display_test_results(button_error_code, ddr_error_code, sd_error_code, lsm_error_code, ble_error_code);
+	display_test_results(button_error_code, ddr_error_code, sd_error_code, lsm_error_code, ble_error_code, temp_error_code);
 	while(1){}
 }
 
-void display_test_results(uint8_t button_error_code, uint8_t ddr_error_code, uint8_t sd_error_code, uint8_t lsm_error_code, uint8_t ble_error_code )
+void display_test_results(uint8_t button_error_code, uint8_t ddr_error_code, uint8_t sd_error_code, uint8_t lsm_error_code, uint8_t ble_error_code, uint8_t temp_error_code)
 {
 	uint16_t x_position, y_position;
 	char *result_string;
@@ -301,12 +302,11 @@ void display_test_results(uint8_t button_error_code, uint8_t ddr_error_code, uin
 	x_position = (DISPLAY_X_MAX -12) - (strlen(result_string)* NUM_X_PIXEL_PER_CHAR);
 	Draw_string_new(x_position, (y_position), (uint_8 *) result_string, COLOUR_BLACK, MEDIUM_FONT);
 	
-	/*TEMP TEST  -- pass if it didn't crash*/
+	/*TEMP TEST*/ 
 	x_position = 12;
 	y_position = y_position +(2 * NUM_Y_PIXEL_PER_CHAR);
 	Draw_string_new(x_position, y_position, (uint_8 *) "TEMP TEST:", COLOUR_BLACK, MEDIUM_FONT);	
 	
-	uint8_t temp_error_code = 0;
 	result_string = (temp_error_code == 0) ? pass : fail;
 	x_position = (DISPLAY_X_MAX -12) - (strlen(result_string)* NUM_X_PIXEL_PER_CHAR);
 	Draw_string_new(x_position, (y_position), (uint_8 *) result_string, COLOUR_BLACK, MEDIUM_FONT);

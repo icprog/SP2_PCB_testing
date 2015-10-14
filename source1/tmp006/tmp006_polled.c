@@ -710,6 +710,7 @@ uint_8 init_tmp006_i2c1(void)
 {
     _mqx_int param;
     uchar tmp006_buffer[3];
+    uint8_t error_code = 0;
     
     TMP_Data_Ready = 0;
     /* Allocate receive tmp006_buffer */
@@ -726,9 +727,7 @@ uint_8 init_tmp006_i2c1(void)
     ioctl(Tmp006_fd, IO_IOCTL_I2C_SET_BAUD, &param);
     ioctl(Tmp006_fd, IO_IOCTL_I2C_SET_MASTER_MODE, NULL);
     TMP006_enable_continuous_conversion();
-    
     i2c_read_polled (Tmp006_fd, CONFIG_REG_ADDRESS, tmp006_buffer, 2); 
-    
     if((tmp006_buffer[0]==Tmp_continuous_mode_command[0])&&
     		(tmp006_buffer[1]==Tmp_continuous_mode_command[1]))
     {
@@ -737,14 +736,16 @@ uint_8 init_tmp006_i2c1(void)
     }
 	else
 	{
+		printf("buffer[0] = %b, buffer[1] = %b", tmp006_buffer[0], tmp006_buffer[1]);
 		printf("Temperature Test Fail\n");
     	Draw_string_new(10,200, (uint_8 *)"TMP006 TEST FAILED",COLOUR_BLACK,MEDIUM_FONT);
+    	error_code = 1;
 	}
 	
 	printf("\n\n***End of Testing Temperature Sensor***\n\n");
 	
     TMP006_enable_powerdown_mode();
-    return 0;
+    return error_code;
 }
 
 /*-----------------------------------------------------------------------------
@@ -1092,7 +1093,7 @@ void Tmp006_Read(char test_time)
 /*
  * it seems like there are some uncessary delays in theis function
  */
-void Test_Tmp006(void)
+uint8_t Test_Tmp006(void)
 {
 	printf("\n********STARTING TMP006 TEST**********\n");
 	buff_clear();
@@ -1100,11 +1101,12 @@ void Test_Tmp006(void)
 	Create_Title("TMP006 TEST",strlen("TMP006 TEST"));
 	Draw_string_new(15,80, (uint_8 *)"STARTING TMP TEST",COLOUR_BLACK,MEDIUM_FONT);
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
-	_time_delay(2000);
-	init_tmp006_i2c1();
+	_time_delay(1000);
+	uint8_t error_code = init_tmp006_i2c1();
 	Refresh_Lcd_Buffer((uint_8 *) frame_buff);
-	_time_delay(2000);
+	_time_delay(1500);
 	printf("\n********TEMPERATURE TEST COMPLETED********\n");
+	return error_code;
 	
 }
 
