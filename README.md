@@ -1,9 +1,4 @@
-# SP2_Calibration
-This repo contains all necessary source code for building SP2 calibration firmware binary (.bin)
+# SP2 PCB TEST
+This repo contains all necessary source code for generating the PCB TEST CODE .afx file
 
-
-## Necessary files
-- foo
-- bar
-- noo
 
