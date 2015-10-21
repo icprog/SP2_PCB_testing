@@ -130,9 +130,11 @@ void UI_Task(uint_32 )
 
 	//	Update_rtc(Time_from_settings,Date_from_settings); 
 	Init_HardWare();
+	update_ble_firmware();
 	Switch_acquisition_mode();
 	Perform_Startup_Test(); //this is the whole test of the unit
 	Switch_to_idle_mode();
+	
 	display_Mainmenu();
 	while(1)
 	{
